@@ -1,4 +1,6 @@
 @import './base.css';
+@import './styles/design-tokens.css';
+@import './styles/utilities.css';
 
 /* 重置App样式 */
 #app {
@@ -22,15 +24,4 @@ a,
   }
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
-}
+/* 删除可能导致布局问题的媒体查询 */

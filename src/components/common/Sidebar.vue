@@ -2,6 +2,13 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../../stores/user'
+import {
+  HomeFilled,
+  Files,
+  Check,
+  User,
+  List
+} from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -14,22 +21,22 @@ const teacherMenus = [
   {
     title: '首页',
     path: '/teacher/home',
-    icon: 'HomeFilled'
+    icon: HomeFilled
   },
   {
     title: '实验管理',
     path: '/teacher/experiment-manage',
-    icon: 'Files'
+    icon: Files
   },
   {
     title: '实验评价',
     path: '/teacher/evaluation',
-    icon: 'Check'
+    icon: Check
   },
   {
     title: '班级管理',
     path: '/teacher/class-manage',
-    icon: 'User'
+    icon: User
   }
 ]
 
@@ -38,17 +45,17 @@ const studentMenus = [
   {
     title: '首页',
     path: '/student/home',
-    icon: 'HomeFilled'
+    icon: HomeFilled
   },
   {
     title: '实验列表',
     path: '/student/experiment-list',
-    icon: 'Files'
+    icon: Files
   },
   {
     title: '实验结果',
     path: '/student/result',
-    icon: 'List'
+    icon: List
   }
 ]
 

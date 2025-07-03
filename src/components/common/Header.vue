@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../../stores/user'
+import { ArrowDown } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -26,7 +27,7 @@ const handleLogout = async () => {
       <el-dropdown>
         <span class="user-dropdown">
           {{ userName }}({{ userRole }})
-          <el-icon><arrow-down /></el-icon>
+          <el-icon><ArrowDown /></el-icon>
         </span>
         <template #dropdown>
           <el-dropdown-menu>
