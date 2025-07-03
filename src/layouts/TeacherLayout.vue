@@ -203,7 +203,7 @@ onMounted(() => {
       </aside>
 
       <!-- 内容区域 -->
-      <main class="content-area">
+      <main class="content-area" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
         <div class="content-wrapper">
           <router-view v-slot="{ Component }">
             <transition name="page" mode="out-in">
@@ -229,9 +229,12 @@ onMounted(() => {
   position: relative;
   background: var(--bg-secondary);
   overflow-x: hidden;
-  --teacher-primary: #f093fb;
-  --teacher-secondary: #f5576c;
-  --teacher-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --teacher-primary: #2563eb;
+  --teacher-secondary: #1e40af;
+  --teacher-accent: #3b82f6;
+  --teacher-gradient: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  --teacher-light: rgba(37, 99, 235, 0.1);
+  --teacher-medium: rgba(37, 99, 235, 0.2);
 }
 
 /* 动态背景 - 教师端专用 */
@@ -308,12 +311,12 @@ onMounted(() => {
 
 .user-badge.teacher {
   padding: var(--space-1) var(--space-3);
-  background: linear-gradient(135deg, rgba(240, 147, 251, 0.2), rgba(245, 87, 108, 0.2));
+  background: var(--teacher-light);
   color: var(--teacher-secondary);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
-  border: 1px solid rgba(240, 147, 251, 0.3);
+  border: 1px solid var(--teacher-medium);
 }
 
 .header-right {
@@ -388,12 +391,28 @@ onMounted(() => {
   backdrop-filter: blur(20px);
   border-right: 1px solid var(--border-light);
   transition: all var(--duration-normal) var(--ease-out);
-  position: relative;
+  position: fixed;
+  top: 70px;
+  left: 0;
+  height: calc(100vh - 70px);
   z-index: var(--z-sticky);
+  overflow-y: auto;
 }
 
 .sidebar.collapsed {
   width: 60px;
+}
+
+/* 内容区域需要左边距来避免被固定侧边栏遮挡 */
+.content-area {
+  margin-left: 200px;
+  width: calc(100% - 200px);
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.content-area.sidebar-collapsed {
+  margin-left: 60px;
+  width: calc(100% - 60px);
 }
 
 /* 侧边栏头部 - 教师端样式 */
@@ -447,12 +466,12 @@ onMounted(() => {
 
 .sidebar.collapsed .sidebar-toggle {
   position: static;
-  background: linear-gradient(135deg, rgba(240, 147, 251, 0.2), rgba(245, 87, 108, 0.2));
+  background: var(--teacher-light);
   color: var(--teacher-primary);
 }
 
 .sidebar-toggle:hover {
-  background: linear-gradient(135deg, rgba(240, 147, 251, 0.3), rgba(245, 87, 108, 0.3));
+  background: var(--teacher-medium);
   color: var(--teacher-secondary);
   transform: scale(1.05);
 }
@@ -495,7 +514,7 @@ onMounted(() => {
 }
 
 .nav-item:hover {
-  background: linear-gradient(135deg, rgba(240, 147, 251, 0.1), rgba(245, 87, 108, 0.1));
+  background: var(--teacher-light);
   color: var(--teacher-primary);
 }
 
@@ -594,12 +613,12 @@ onMounted(() => {
 }
 
 .nav-sub-item:hover {
-  background: linear-gradient(135deg, rgba(240, 147, 251, 0.1), rgba(245, 87, 108, 0.1));
+  background: var(--teacher-light);
   color: var(--teacher-primary);
 }
 
 .nav-sub-item.active {
-  background: linear-gradient(135deg, rgba(240, 147, 251, 0.2), rgba(245, 87, 108, 0.2));
+  background: var(--teacher-medium);
   color: var(--teacher-secondary);
 }
 
@@ -621,9 +640,9 @@ onMounted(() => {
 
 /* 内容区域 */
 .content-area {
-  flex: 1;
   background: var(--bg-secondary);
   position: relative;
+  min-height: calc(100vh - 70px);
 }
 
 .content-wrapper {
@@ -656,10 +675,19 @@ onMounted(() => {
     top: 70px;
     height: calc(100vh - 70px);
     z-index: var(--z-modal);
+    width: 280px;
   }
 
   .sidebar.mobile-show {
     left: 0;
+  }
+
+  .content-area {
+    margin-left: 0;
+  }
+
+  .content-area.sidebar-collapsed {
+    margin-left: 0;
   }
 
   .content-wrapper {

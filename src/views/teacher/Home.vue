@@ -1043,18 +1043,18 @@ onUnmounted(() => {
 .welcome-banner {
   padding: 2rem;
   margin-bottom: 2rem;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
   color: white;
   border-radius: 1rem;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(240, 147, 251, 0.3);
+  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.3);
   transition: all 0.3s ease;
 }
 
 .welcome-banner:hover {
   transform: translateY(-2px);
-  box-shadow: 0 15px 40px rgba(240, 147, 251, 0.4);
+  box-shadow: 0 15px 40px rgba(37, 99, 235, 0.4);
 }
 
 .welcome-banner::before {
@@ -1165,7 +1165,7 @@ onUnmounted(() => {
 }
 
 .view-all-btn {
-  color: #f093fb;
+  color: #2563eb;
   font-weight: 500;
   transition: all 0.3s ease;
   padding: 0.5rem 1rem;
@@ -1173,8 +1173,8 @@ onUnmounted(() => {
 }
 
 .view-all-btn:hover {
-  background: rgba(240, 147, 251, 0.1);
-  color: #e879f9;
+  background: rgba(37, 99, 235, 0.1);
+  color: #1e40af;
   transform: translateX(2px);
 }
 
@@ -1220,8 +1220,8 @@ onUnmounted(() => {
 }
 
 .action-card:hover {
-  border-color: #f0abfc;
-  box-shadow: 0 20px 40px rgba(240, 147, 251, 0.15);
+  border-color: #93c5fd;
+  box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15);
   transform: translateY(-4px) scale(1.02);
 }
 
@@ -1236,7 +1236,7 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.action-icon.bg-primary { background: linear-gradient(135deg, #f093fb, #f5576c); }
+.action-icon.bg-primary { background: linear-gradient(135deg, #2563eb, #1e40af); }
 .action-icon.bg-success { background: linear-gradient(135deg, #4facfe, #00f2fe); }
 .action-icon.bg-warning { background: linear-gradient(135deg, #43e97b, #38f9d7); }
 .action-icon.bg-info { background: linear-gradient(135deg, #667eea, #764ba2); }
@@ -1323,7 +1323,7 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #f093fb, #f5576c);
+  background: linear-gradient(90deg, #2563eb, #1e40af);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.3s ease;
@@ -1334,8 +1334,8 @@ onUnmounted(() => {
 }
 
 .experiment-card:hover {
-  border-color: #f0abfc;
-  box-shadow: 0 20px 40px rgba(240, 147, 251, 0.15);
+  border-color: #93c5fd;
+  box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15);
   transform: translateY(-6px);
 }
 
@@ -1428,12 +1428,12 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #f093fb, #f5576c);
+  background: linear-gradient(90deg, #2563eb, #1e40af);
 }
 
 .overview-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(240, 147, 251, 0.15);
+  box-shadow: 0 12px 40px rgba(37, 99, 235, 0.15);
 }
 
 .overview-header {
@@ -1453,7 +1453,7 @@ onUnmounted(() => {
 .overview-percentage {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #f093fb;
+  color: #2563eb;
 }
 
 .overview-bar-container {
@@ -1467,7 +1467,7 @@ onUnmounted(() => {
 
 .overview-bar {
   height: 100%;
-  background: linear-gradient(90deg, #f093fb, #f5576c);
+  background: linear-gradient(90deg, #2563eb, #1e40af);
   border-radius: 4px;
   transition: width 1s ease;
   position: relative;
@@ -1557,7 +1557,7 @@ onUnmounted(() => {
 .suggestion-icon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #f093fb, #f5576c);
+  background: linear-gradient(135deg, #2563eb, #1e40af);
   border-radius: 0.75rem;
   display: flex;
   align-items: center;
@@ -1633,7 +1633,7 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.stat-icon.bg-primary { background: #f093fb; }
+.stat-icon.bg-primary { background: #2563eb; }
 .stat-icon.bg-success { background: #10b981; }
 .stat-icon.bg-warning { background: #f59e0b; }
 .stat-icon.bg-info { background: #3b82f6; }
@@ -1657,7 +1657,7 @@ onUnmounted(() => {
 
 /* 按钮样式 */
 .btn-gradient {
-  background: linear-gradient(135deg, #f093fb, #f5576c);
+  background: linear-gradient(135deg, #2563eb, #1e40af);
   border: none;
   color: white;
   font-weight: 600;

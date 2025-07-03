@@ -15,7 +15,7 @@
 
   /* 渐变色 */
   --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --gradient-secondary: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
   --gradient-success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   --gradient-warning: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
   --gradient-danger: linear-gradient(135deg, #fa709a 0%, #fee140 100%);

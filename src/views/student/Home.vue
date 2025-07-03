@@ -1238,7 +1238,7 @@ onUnmounted(() => {
 .action-icon.bg-primary { background: linear-gradient(135deg, #667eea, #764ba2); }
 .action-icon.bg-success { background: linear-gradient(135deg, #4facfe, #00f2fe); }
 .action-icon.bg-warning { background: linear-gradient(135deg, #43e97b, #38f9d7); }
-.action-icon.bg-info { background: linear-gradient(135deg, #f093fb, #f5576c); }
+.action-icon.bg-info { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
 
 .action-content {
   flex: 1;

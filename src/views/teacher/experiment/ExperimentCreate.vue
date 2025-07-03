@@ -64,8 +64,24 @@
             v-model="experimentForm.references"
             type="textarea"
             rows="4"
-            placeholder="请输入参考资料"
+            placeholder="请输入文字参考资料"
           ></el-input>
+          <div class="reference-upload mt-4">
+            <p class="upload-tip">图片资料上传：</p>
+            <el-upload
+              v-model:file-list="referenceImages"
+              action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
+              list-type="picture-card"
+              :on-preview="handlePictureCardPreview"
+              :on-remove="handleRemove"
+              :on-success="handleSuccess"
+            >
+              <el-icon><Plus /></el-icon>
+            </el-upload>
+            <el-dialog v-model="dialogVisible">
+              <img w-full :src="dialogImageUrl" alt="Preview Image" style="width: 100%" />
+            </el-dialog>
+          </div>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="submitForm">创建</el-button>
@@ -81,6 +97,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import { createExperiment } from '@/api/experiment'
 import { getCourses } from '@/api/class'
 
@@ -89,6 +106,10 @@ const experimentFormRef = ref(null)
 const courses = ref([])
 const classes = ref([])
 
+const referenceImages = ref([])
+const dialogImageUrl = ref('')
+const dialogVisible = ref(false)
+
 const experimentForm = reactive({
   title: '',
   courseId: '',
@@ -96,7 +117,8 @@ const experimentForm = reactive({
   deadline: '',
   description: '',
   requirements: '',
-  references: ''
+  references: '',
+  reference_images: []
 })
 
 const rules = {
@@ -141,6 +163,22 @@ onMounted(async () => {
     ElMessage.error('获取数据失败，请刷新重试')
   }
 })
+
+const handleRemove = (uploadFile, uploadFiles) => {
+  console.log(uploadFile, uploadFiles)
+  experimentForm.reference_images = referenceImages.value.map(file => file.url)
+}
+
+const handlePictureCardPreview = (uploadFile) => {
+  dialogImageUrl.value = uploadFile.url
+  dialogVisible.value = true
+}
+
+const handleSuccess = (response, uploadFile) => {
+  // 假设后端返回的格式是 { url: '...' }
+  uploadFile.url = response.url
+  experimentForm.reference_images = referenceImages.value.map(file => file.url)
+}
 
 const submitForm = async () => {
   if (!experimentFormRef.value) return
@@ -189,5 +227,15 @@ const goBack = () => {
 
 .experiment-form {
   margin-top: 20px;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.upload-tip {
+  color: var(--el-text-color-regular);
+  font-size: 14px;
+  margin-bottom: 8px;
 }
 </style> 
