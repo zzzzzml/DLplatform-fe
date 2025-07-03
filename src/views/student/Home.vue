@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../../stores/user'
 import { useExperimentStore } from '../../stores/experiment'
@@ -121,6 +121,19 @@ const getDifficultyText = (difficulty) => {
 onMounted(() => {
   fetchRecentExperiments()
   fetchStats()
+
+  // 设置页面背景
+  document.body.style.background = `linear-gradient(135deg,
+    rgba(102, 126, 234, 0.08) 0%,
+    rgba(118, 75, 162, 0.06) 50%,
+    rgba(79, 172, 254, 0.05) 100%)`
+  document.body.style.backgroundAttachment = 'fixed'
+})
+
+onUnmounted(() => {
+  // 恢复默认背景
+  document.body.style.background = ''
+  document.body.style.backgroundAttachment = ''
 })
 </script>
 
@@ -164,283 +177,295 @@ onMounted(() => {
         <div class="line line-3"></div>
       </div>
 
-
-    </div>
-
-    <!-- 欢迎横幅 -->
-    <div class="welcome-banner animate-fade-in-up">
-      <div class="banner-content">
-        <div class="welcome-text">
-          <h1 class="welcome-title">
-            欢迎回来，<span class="text-gradient">{{ userStore.userInfo?.name || '同学' }}</span>
-          </h1>
-          <p class="welcome-subtitle">
-            继续您的深度学习之旅，探索人工智能的无限可能
-          </p>
-        </div>
-        <div class="welcome-stats">
-          <div class="stat-item">
-            <div class="stat-number">{{ stats.totalExperiments }}</div>
-            <div class="stat-label">总实验数</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number">{{ completionRate }}%</div>
-            <div class="stat-label">完成率</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number">{{ stats.averageScore }}</div>
-            <div class="stat-label">平均分</div>
-          </div>
-        </div>
-      </div>
-      <div class="banner-decoration">
-        <div class="floating-icon">
-          <el-icon size="60"><DataAnalysis /></el-icon>
-        </div>
+      <!-- 额外装饰元素 -->
+      <div class="extra-decorations">
+        <div class="curved-line curve-1"></div>
+        <div class="curved-line curve-2"></div>
+        <div class="mesh-pattern mesh-1"></div>
+        <div class="mesh-pattern mesh-2"></div>
+        <div class="floating-orb orb-1"></div>
+        <div class="floating-orb orb-2"></div>
+        <div class="floating-orb orb-3"></div>
+        <div class="floating-orb orb-4"></div>
       </div>
     </div>
 
-    <!-- 快速操作 -->
-    <div class="quick-actions animate-fade-in-up animate-delay-200">
-      <h2 class="section-title">
-        <el-icon><Star /></el-icon>
-        快速操作
-      </h2>
-      <div class="action-grid">
-        <div
-          v-for="action in quickActions"
-          :key="action.title"
-          class="action-card"
-          @click="router.push(action.path)"
-        >
-          <div class="action-icon" :class="`bg-${action.color}`">
-            <el-icon size="24"><component :is="action.icon" /></el-icon>
+    <div class="main-content">
+      <!-- 欢迎横幅 -->
+      <div class="welcome-banner animate-fade-in-up">
+        <div class="banner-content">
+          <div class="welcome-text">
+            <h1 class="welcome-title">
+              欢迎回来，<span class="text-gradient">{{ userStore.userInfo?.name || '同学' }}</span>
+            </h1>
+            <p class="welcome-subtitle">
+              继续您的深度学习之旅，探索人工智能的无限可能
+            </p>
           </div>
-          <div class="action-content">
-            <h3 class="action-title">{{ action.title }}</h3>
-            <p class="action-description">{{ action.description }}</p>
+          <div class="welcome-stats">
+            <div class="stat-item">
+              <div class="stat-number">{{ stats.totalExperiments }}</div>
+              <div class="stat-label">总实验数</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">{{ completionRate }}%</div>
+              <div class="stat-label">完成率</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">{{ stats.averageScore }}</div>
+              <div class="stat-label">平均分</div>
+            </div>
           </div>
-          <div class="action-arrow">
-            <el-icon><ArrowRight /></el-icon>
+        </div>
+        <div class="banner-decoration">
+          <div class="floating-icon">
+            <el-icon size="60"><DataAnalysis /></el-icon>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- 最近实验 -->
-    <div class="recent-experiments animate-fade-in-up animate-delay-400">
-      <div class="section-header">
+      <!-- 快速操作 -->
+      <div class="quick-actions animate-fade-in-up animate-delay-200">
         <h2 class="section-title">
-          <el-icon><Clock /></el-icon>
-          最近实验
+          <el-icon><Star /></el-icon>
+          快速操作
         </h2>
-        <el-button
-          link
-          class="view-all-btn"
-          @click="goToExperimentList"
-        >
-          查看全部
-          <el-icon class="ml-1"><ArrowRight /></el-icon>
-        </el-button>
+        <div class="action-grid">
+          <div
+            v-for="action in quickActions"
+            :key="action.title"
+            class="action-card"
+            @click="router.push(action.path)"
+          >
+            <div class="action-icon" :class="`bg-${action.color}`">
+              <el-icon size="24"><component :is="action.icon" /></el-icon>
+            </div>
+            <div class="action-content">
+              <h3 class="action-title">{{ action.title }}</h3>
+              <p class="action-description">{{ action.description }}</p>
+            </div>
+            <div class="action-arrow">
+              <el-icon><ArrowRight /></el-icon>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div v-loading="loading" class="experiments-container">
-        <div v-if="recentExperiments.length === 0" class="empty-state">
-          <el-icon size="80" class="empty-icon"><Notebook /></el-icon>
-          <h3>暂无实验</h3>
-          <p>开始您的第一个深度学习实验吧！</p>
-          <el-button type="primary" class="btn-gradient" @click="goToExperimentList">
-            <el-icon><Plus /></el-icon>
-            浏览实验
+      <!-- 最近实验 -->
+      <div class="recent-experiments animate-fade-in-up animate-delay-400">
+        <div class="section-header">
+          <h2 class="section-title">
+            <el-icon><Clock /></el-icon>
+            最近实验
+          </h2>
+          <el-button
+            link
+            class="view-all-btn"
+            @click="goToExperimentList"
+          >
+            查看全部
+            <el-icon class="ml-1"><ArrowRight /></el-icon>
           </el-button>
         </div>
 
-        <div v-else class="experiments-grid">
-          <div
-            v-for="experiment in recentExperiments"
-            :key="experiment.id"
-            class="experiment-card"
-            @click="viewExperiment(experiment.id)"
-          >
-            <div class="experiment-header">
-              <div class="experiment-status">
-                <el-tag
-                  :type="experiment.status === 'active' ? 'success' : 'info'"
+        <div v-loading="loading" class="experiments-container">
+          <div v-if="recentExperiments.length === 0" class="empty-state">
+            <el-icon size="80" class="empty-icon"><Notebook /></el-icon>
+            <h3>暂无实验</h3>
+            <p>开始您的第一个深度学习实验吧！</p>
+            <el-button type="primary" class="btn-gradient" @click="goToExperimentList">
+              <el-icon><Plus /></el-icon>
+              浏览实验
+            </el-button>
+          </div>
+
+          <div v-else class="experiments-grid">
+            <div
+              v-for="experiment in recentExperiments"
+              :key="experiment.id"
+              class="experiment-card"
+              @click="viewExperiment(experiment.id)"
+            >
+              <div class="experiment-header">
+                <div class="experiment-status">
+                  <el-tag
+                    :type="experiment.status === 'active' ? 'success' : 'info'"
+                    size="small"
+                  >
+                    {{ experiment.status === 'active' ? '进行中' : '已完成' }}
+                  </el-tag>
+                  <el-tag
+                    :type="getDifficultyColor(experiment.difficulty)"
+                    size="small"
+                    effect="plain"
+                  >
+                    {{ getDifficultyText(experiment.difficulty) }}
+                  </el-tag>
+                </div>
+                <div class="experiment-score" v-if="experiment.score">
+                  <el-icon><Trophy /></el-icon>
+                  <span>{{ experiment.score }}分</span>
+                </div>
+              </div>
+
+              <div class="experiment-content">
+                <h3 class="experiment-title">{{ experiment.title }}</h3>
+                <p class="experiment-description">{{ experiment.description }}</p>
+
+                <div class="experiment-meta">
+                  <div class="meta-item">
+                    <el-icon><User /></el-icon>
+                    <span>{{ experiment.teacherName }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <el-icon><Clock /></el-icon>
+                    <span>{{ experiment.endTime }}</span>
+                  </div>
+                </div>
+
+                <div v-if="experiment.status === 'active'" class="experiment-progress">
+                  <div class="progress-label">
+                    <span>进度</span>
+                    <span>{{ experiment.progress }}%</span>
+                  </div>
+                  <el-progress
+                    :percentage="experiment.progress"
+                    :stroke-width="6"
+                    :show-text="false"
+                  />
+                </div>
+              </div>
+
+              <div class="experiment-footer">
+                <el-button
+                  type="primary"
                   size="small"
+                  class="btn-gradient"
                 >
-                  {{ experiment.status === 'active' ? '进行中' : '已完成' }}
-                </el-tag>
-                <el-tag
-                  :type="getDifficultyColor(experiment.difficulty)"
-                  size="small"
-                  effect="plain"
-                >
-                  {{ getDifficultyText(experiment.difficulty) }}
-                </el-tag>
+                  {{ experiment.status === 'active' ? '继续实验' : '查看结果' }}
+                  <el-icon><ArrowRight /></el-icon>
+                </el-button>
               </div>
-              <div class="experiment-score" v-if="experiment.score">
-                <el-icon><Trophy /></el-icon>
-                <span>{{ experiment.score }}分</span>
-              </div>
-            </div>
-
-            <div class="experiment-content">
-              <h3 class="experiment-title">{{ experiment.title }}</h3>
-              <p class="experiment-description">{{ experiment.description }}</p>
-
-              <div class="experiment-meta">
-                <div class="meta-item">
-                  <el-icon><User /></el-icon>
-                  <span>{{ experiment.teacherName }}</span>
-                </div>
-                <div class="meta-item">
-                  <el-icon><Clock /></el-icon>
-                  <span>{{ experiment.endTime }}</span>
-                </div>
-              </div>
-
-              <div v-if="experiment.status === 'active'" class="experiment-progress">
-                <div class="progress-label">
-                  <span>进度</span>
-                  <span>{{ experiment.progress }}%</span>
-                </div>
-                <el-progress
-                  :percentage="experiment.progress"
-                  :stroke-width="6"
-                  :show-text="false"
-                />
-              </div>
-            </div>
-
-            <div class="experiment-footer">
-              <el-button
-                type="primary"
-                size="small"
-                class="btn-gradient"
-              >
-                {{ experiment.status === 'active' ? '继续实验' : '查看结果' }}
-                <el-icon><ArrowRight /></el-icon>
-              </el-button>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- 学习进度展示 -->
-    <div class="learning-progress animate-fade-in-up animate-delay-600">
-      <h2 class="section-title">
-        <el-icon><TrendCharts /></el-icon>
-        学习进度
-      </h2>
-      <div class="progress-container">
-        <div class="progress-card">
-          <div class="progress-header">
-            <h3>本周学习目标</h3>
-            <span class="progress-percentage">75%</span>
+      <!-- 学习进度展示 -->
+      <div class="learning-progress animate-fade-in-up animate-delay-600">
+        <h2 class="section-title">
+          <el-icon><TrendCharts /></el-icon>
+          学习进度
+        </h2>
+        <div class="progress-container">
+          <div class="progress-card">
+            <div class="progress-header">
+              <h3>本周学习目标</h3>
+              <span class="progress-percentage">75%</span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar" style="width: 75%"></div>
+            </div>
+            <p class="progress-description">已完成 3/4 个实验任务</p>
           </div>
-          <div class="progress-bar-container">
-            <div class="progress-bar" style="width: 75%"></div>
-          </div>
-          <p class="progress-description">已完成 3/4 个实验任务</p>
-        </div>
 
-        <div class="progress-card">
-          <div class="progress-header">
-            <h3>技能掌握度</h3>
-            <span class="progress-percentage">68%</span>
-          </div>
-          <div class="progress-bar-container">
-            <div class="progress-bar skill-progress" style="width: 68%"></div>
-          </div>
-          <p class="progress-description">深度学习基础知识</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- 学习统计 -->
-    <div class="learning-stats animate-fade-in-up animate-delay-800">
-      <h2 class="section-title">
-        <el-icon><DataAnalysis /></el-icon>
-        学习统计
-      </h2>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon bg-primary">
-            <el-icon><Document /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ stats.totalExperiments }}</div>
-            <div class="stat-name">总实验数</div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon bg-success">
-            <el-icon><Trophy /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ stats.completedExperiments }}</div>
-            <div class="stat-name">已完成</div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon bg-warning">
-            <el-icon><Star /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ stats.averageScore }}</div>
-            <div class="stat-name">平均分</div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon bg-info">
-            <el-icon><TrendCharts /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">#{{ stats.currentRank }}</div>
-            <div class="stat-name">班级排名</div>
+          <div class="progress-card">
+            <div class="progress-header">
+              <h3>技能掌握度</h3>
+              <span class="progress-percentage">68%</span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar skill-progress" style="width: 68%"></div>
+            </div>
+            <p class="progress-description">深度学习基础知识</p>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- 学习建议 -->
-    <div class="learning-suggestions animate-fade-in-up animate-delay-1000">
-      <h2 class="section-title">
-        <el-icon><Star /></el-icon>
-        学习建议
-      </h2>
-      <div class="suggestions-grid">
-        <div class="suggestion-card">
-          <div class="suggestion-icon">
-            <el-icon><Notebook /></el-icon>
+      <!-- 学习统计 -->
+      <div class="learning-stats animate-fade-in-up animate-delay-800">
+        <h2 class="section-title">
+          <el-icon><DataAnalysis /></el-icon>
+          学习统计
+        </h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon bg-primary">
+              <el-icon><Document /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.totalExperiments }}</div>
+              <div class="stat-name">总实验数</div>
+            </div>
           </div>
-          <div class="suggestion-content">
-            <h3>加强基础练习</h3>
-            <p>建议完成更多基础实验来巩固理论知识</p>
+
+          <div class="stat-card">
+            <div class="stat-icon bg-success">
+              <el-icon><Trophy /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.completedExperiments }}</div>
+              <div class="stat-name">已完成</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon bg-warning">
+              <el-icon><Star /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.averageScore }}</div>
+              <div class="stat-name">平均分</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon bg-info">
+              <el-icon><TrendCharts /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">#{{ stats.currentRank }}</div>
+              <div class="stat-name">班级排名</div>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div class="suggestion-card">
-          <div class="suggestion-icon">
-            <el-icon><TrendCharts /></el-icon>
+      <!-- 学习建议 -->
+      <div class="learning-suggestions animate-fade-in-up animate-delay-1000">
+        <h2 class="section-title">
+          <el-icon><Star /></el-icon>
+          学习建议
+        </h2>
+        <div class="suggestions-grid">
+          <div class="suggestion-card">
+            <div class="suggestion-icon">
+              <el-icon><Notebook /></el-icon>
+            </div>
+            <div class="suggestion-content">
+              <h3>加强基础练习</h3>
+              <p>建议完成更多基础实验来巩固理论知识</p>
+            </div>
           </div>
-          <div class="suggestion-content">
-            <h3>关注学习进度</h3>
-            <p>保持稳定的学习节奏，按时完成实验任务</p>
-          </div>
-        </div>
 
-        <div class="suggestion-card">
-          <div class="suggestion-icon">
-            <el-icon><Trophy /></el-icon>
+          <div class="suggestion-card">
+            <div class="suggestion-icon">
+              <el-icon><TrendCharts /></el-icon>
+            </div>
+            <div class="suggestion-content">
+              <h3>关注学习进度</h3>
+              <p>保持稳定的学习节奏，按时完成实验任务</p>
+            </div>
           </div>
-          <div class="suggestion-content">
-            <h3>挑战高难度</h3>
-            <p>尝试更具挑战性的实验项目提升技能水平</p>
+
+          <div class="suggestion-card">
+            <div class="suggestion-icon">
+              <el-icon><Trophy /></el-icon>
+            </div>
+            <div class="suggestion-content">
+              <h3>挑战高难度</h3>
+              <p>尝试更具挑战性的实验项目提升技能水平</p>
+            </div>
           </div>
         </div>
       </div>
@@ -448,27 +473,19 @@ onMounted(() => {
   </div>
 </template>
 
-<style>
-/* 全局背景样式 - 不使用scoped */
-body {
-  background: linear-gradient(135deg,
-    rgba(102, 126, 234, 0.08) 0%,
-    rgba(118, 75, 162, 0.06) 50%,
-    rgba(79, 172, 254, 0.05) 100%) !important;
-  background-attachment: fixed !important;
-}
-</style>
-
 <style scoped>
 .student-home {
+  position: relative;
+}
+
+.main-content {
   padding: 0;
   max-width: 1200px;
   margin: 0 auto;
   position: relative;
   min-height: 100vh;
+  z-index: 1;
 }
-
-
 
 @keyframes backgroundShift {
   0%, 100% {
@@ -489,7 +506,7 @@ body {
   right: 0;
   bottom: 0;
   pointer-events: none;
-  z-index: -1;
+  z-index: 0;
   overflow: hidden;
 }
 
@@ -508,7 +525,7 @@ body {
   top: 10%;
   left: 5%;
   animation-delay: 0s;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .floating-shape.shape-2 {
@@ -517,7 +534,7 @@ body {
   top: 70%;
   right: 10%;
   animation-delay: 3s;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .floating-shape.shape-3 {
@@ -526,7 +543,7 @@ body {
   bottom: 15%;
   left: 15%;
   animation-delay: 6s;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .floating-shape.shape-4 {
@@ -535,7 +552,7 @@ body {
   top: 30%;
   right: 25%;
   animation-delay: 9s;
-  background: linear-gradient(135deg, rgba(79, 172, 254, 0.07), rgba(0, 242, 254, 0.07));
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.15), rgba(0, 242, 254, 0.15));
 }
 
 .floating-shape.shape-5 {
@@ -544,7 +561,7 @@ body {
   top: 50%;
   left: 80%;
   animation-delay: 12s;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.06), rgba(118, 75, 162, 0.06));
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.12), rgba(118, 75, 162, 0.12));
 }
 
 .floating-shape.shape-6 {
@@ -553,7 +570,7 @@ body {
   bottom: 40%;
   right: 5%;
   animation-delay: 15s;
-  background: linear-gradient(135deg, rgba(240, 147, 251, 0.05), rgba(245, 87, 108, 0.05));
+  background: linear-gradient(135deg, rgba(240, 147, 251, 0.1), rgba(245, 87, 108, 0.1));
 }
 
 @keyframes floatShape {
@@ -597,7 +614,7 @@ body {
   left: 10%;
   border-left: 25px solid transparent;
   border-right: 25px solid transparent;
-  border-bottom: 43px solid rgba(102, 126, 234, 0.1);
+  border-bottom: 43px solid rgba(102, 126, 234, 0.18);
   animation-delay: 2s;
 }
 
@@ -606,13 +623,13 @@ body {
   right: 15%;
   border-left: 20px solid transparent;
   border-right: 20px solid transparent;
-  border-bottom: 35px solid rgba(240, 147, 251, 0.08);
+  border-bottom: 35px solid rgba(240, 147, 251, 0.15);
   animation-delay: 8s;
 }
 
 .square {
   position: absolute;
-  background: linear-gradient(45deg, rgba(118, 75, 162, 0.06), rgba(102, 126, 234, 0.06));
+  background: linear-gradient(45deg, rgba(118, 75, 162, 0.12), rgba(102, 126, 234, 0.12));
   animation: rotateGeometry 25s linear infinite reverse;
 }
 
@@ -636,7 +653,7 @@ body {
   position: absolute;
   width: 50px;
   height: 28.87px;
-  background: rgba(67, 233, 123, 0.08);
+  background: rgba(67, 233, 123, 0.15);
   margin: 14.43px 0;
   animation: rotateGeometry 30s linear infinite;
 }
@@ -652,12 +669,12 @@ body {
 
 .hexagon:before {
   bottom: 100%;
-  border-bottom: 14.43px solid rgba(67, 233, 123, 0.08);
+  border-bottom: 14.43px solid rgba(67, 233, 123, 0.15);
 }
 
 .hexagon:after {
   top: 100%;
-  border-top: 14.43px solid rgba(67, 233, 123, 0.08);
+  border-top: 14.43px solid rgba(67, 233, 123, 0.15);
 }
 
 .hexagon-1 {
@@ -699,9 +716,9 @@ body {
 
 .particle {
   position: absolute;
-  width: 4px;
-  height: 4px;
-  background: rgba(102, 126, 234, 0.6);
+  width: 5px;
+  height: 5px;
+  background: rgba(102, 126, 234, 0.8);
   border-radius: 50%;
   animation: particleFloat 12s ease-in-out infinite;
 }
@@ -710,56 +727,56 @@ body {
   top: 10%;
   left: 15%;
   animation-delay: 0s;
-  background: rgba(102, 126, 234, 0.6);
+  background: rgba(102, 126, 234, 0.8);
 }
 
 .particle-2 {
   top: 25%;
   right: 20%;
   animation-delay: 2s;
-  background: rgba(240, 147, 251, 0.6);
+  background: rgba(240, 147, 251, 0.8);
 }
 
 .particle-3 {
   top: 45%;
   left: 8%;
   animation-delay: 4s;
-  background: rgba(67, 233, 123, 0.6);
+  background: rgba(67, 233, 123, 0.8);
 }
 
 .particle-4 {
   bottom: 30%;
   right: 12%;
   animation-delay: 6s;
-  background: rgba(79, 172, 254, 0.6);
+  background: rgba(79, 172, 254, 0.8);
 }
 
 .particle-5 {
   bottom: 15%;
   left: 30%;
   animation-delay: 8s;
-  background: rgba(118, 75, 162, 0.6);
+  background: rgba(118, 75, 162, 0.8);
 }
 
 .particle-6 {
   top: 35%;
   right: 35%;
   animation-delay: 10s;
-  background: rgba(245, 87, 108, 0.6);
+  background: rgba(245, 87, 108, 0.8);
 }
 
 .particle-7 {
   bottom: 45%;
   left: 70%;
   animation-delay: 1s;
-  background: rgba(56, 249, 215, 0.6);
+  background: rgba(56, 249, 215, 0.8);
 }
 
 .particle-8 {
   top: 70%;
   right: 8%;
   animation-delay: 7s;
-  background: rgba(102, 126, 234, 0.6);
+  background: rgba(102, 126, 234, 0.8);
 }
 
 @keyframes particleFloat {
@@ -793,7 +810,7 @@ body {
 
 .line {
   position: absolute;
-  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.35), transparent);
   animation: lineMove 12s ease-in-out infinite;
 }
 
@@ -829,6 +846,150 @@ body {
   50% {
     opacity: 0.8;
     transform: translateX(20px);
+  }
+}
+
+/* 额外装饰元素 */
+.extra-decorations {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.curved-line {
+  position: absolute;
+  width: 300px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.3), transparent);
+  border-radius: 50%;
+  animation: curveMove 16s ease-in-out infinite;
+}
+
+.curve-1 {
+  top: 25%;
+  left: 20%;
+  transform: rotate(15deg);
+  animation-delay: 0s;
+}
+
+.curve-2 {
+  bottom: 40%;
+  right: 15%;
+  transform: rotate(-25deg);
+  animation-delay: 8s;
+  background: linear-gradient(90deg, transparent, rgba(240, 147, 251, 0.25), transparent);
+}
+
+@keyframes curveMove {
+  0%, 100% {
+    transform: rotate(15deg) translateY(0px);
+    opacity: 0.4;
+  }
+  50% {
+    transform: rotate(25deg) translateY(-20px);
+    opacity: 0.8;
+  }
+}
+
+.mesh-pattern {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  background-image:
+    linear-gradient(rgba(102, 126, 234, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(102, 126, 234, 0.1) 1px, transparent 1px);
+  background-size: 15px 15px;
+  animation: meshFloat 22s ease-in-out infinite;
+}
+
+.mesh-1 {
+  top: 35%;
+  right: 30%;
+  animation-delay: 3s;
+}
+
+.mesh-2 {
+  bottom: 20%;
+  left: 25%;
+  animation-delay: 12s;
+  background-image:
+    linear-gradient(rgba(240, 147, 251, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(240, 147, 251, 0.08) 1px, transparent 1px);
+}
+
+@keyframes meshFloat {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: rotate(45deg) scale(1.1);
+    opacity: 0.6;
+  }
+}
+
+.floating-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(25px);
+  animation: orbDrift 20s ease-in-out infinite;
+}
+
+.orb-1 {
+  width: 80px;
+  height: 80px;
+  top: 18%;
+  left: 75%;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.4), rgba(118, 75, 162, 0.1));
+  animation-delay: 1s;
+}
+
+.orb-2 {
+  width: 120px;
+  height: 120px;
+  bottom: 45%;
+  right: 8%;
+  background: radial-gradient(circle, rgba(240, 147, 251, 0.3), rgba(245, 87, 108, 0.08));
+  animation-delay: 6s;
+}
+
+.orb-3 {
+  width: 60px;
+  height: 60px;
+  top: 55%;
+  left: 8%;
+  background: radial-gradient(circle, rgba(67, 233, 123, 0.35), rgba(56, 249, 215, 0.1));
+  animation-delay: 11s;
+}
+
+.orb-4 {
+  width: 100px;
+  height: 100px;
+  bottom: 15%;
+  right: 40%;
+  background: radial-gradient(circle, rgba(79, 172, 254, 0.25), rgba(0, 242, 254, 0.08));
+  animation-delay: 16s;
+}
+
+@keyframes orbDrift {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) scale(1);
+    opacity: 0.6;
+  }
+  25% {
+    transform: translateY(-30px) translateX(20px) scale(1.1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-10px) translateX(-15px) scale(0.9);
+    opacity: 0.4;
+  }
+  75% {
+    transform: translateY(15px) translateX(25px) scale(1.05);
+    opacity: 0.7;
   }
 }
 
@@ -1596,389 +1757,6 @@ body {
   .experiment-meta {
     flex-direction: column;
     gap: 0.5rem;
-  }
-}
-
-/* 欢迎横幅 */
-.welcome-banner {
-  padding: 2rem;
-  margin-bottom: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 1rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.banner-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: relative;
-  z-index: 2;
-}
-
-.welcome-text {
-  flex: 1;
-}
-
-.welcome-title {
-  font-size: 2.25rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  line-height: 1.25;
-}
-
-
-
-.welcome-stats {
-  display: flex;
-  gap: var(--space-8);
-}
-
-.stat-item {
-  text-align: center;
-}
-
-.stat-number {
-  font-size: var(--text-3xl);
-  font-weight: var(--font-bold);
-  margin-bottom: var(--space-1);
-}
-
-.stat-label {
-  font-size: var(--text-sm);
-  opacity: 0.8;
-}
-
-.banner-decoration {
-  position: absolute;
-  right: -20px;
-  top: 50%;
-  transform: translateY(-50%);
-  opacity: 0.1;
-  z-index: 1;
-}
-
-.floating-icon {
-  color: white;
-}
-
-/* 区块标题 */
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  font-size: var(--text-2xl);
-  font-weight: var(--font-semibold);
-  color: var(--text-primary);
-  margin-bottom: var(--space-6);
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-6);
-}
-
-/* 快速操作 */
-.quick-actions {
-  margin-bottom: var(--space-12);
-}
-
-.action-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--space-6);
-}
-
-.action-card {
-  padding: var(--space-6);
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  cursor: pointer;
-  border: 1px solid var(--border-light);
-  transition: all var(--duration-normal) var(--ease-out);
-}
-
-.action-card:hover {
-  border-color: var(--primary-300);
-  box-shadow: var(--shadow-lg);
-}
-
-.action-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-xl);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
-}
-
-.action-icon.bg-primary { background: var(--gradient-primary); }
-.action-icon.bg-success { background: var(--gradient-success); }
-.action-icon.bg-warning { background: var(--gradient-warning); }
-.action-icon.bg-info { background: var(--gradient-secondary); }
-
-.action-content {
-  flex: 1;
-}
-
-.action-title {
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  color: var(--text-primary);
-  margin: 0 0 var(--space-2) 0;
-}
-
-.action-description {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  margin: 0;
-  line-height: var(--leading-relaxed);
-}
-
-.action-arrow {
-  color: var(--text-tertiary);
-  transition: all var(--duration-normal) var(--ease-out);
-}
-
-.action-card:hover .action-arrow {
-  color: var(--primary-600);
-  transform: translateX(4px);
-}
-
-/* 最近实验 */
-.recent-experiments {
-  margin-bottom: var(--space-12);
-}
-
-.experiments-container {
-  min-height: 200px;
-}
-
-.empty-state {
-  text-align: center;
-  padding: var(--space-12) var(--space-6);
-  color: var(--text-secondary);
-}
-
-.empty-icon {
-  color: var(--gray-300);
-  margin-bottom: var(--space-4);
-}
-
-.empty-state h3 {
-  font-size: var(--text-xl);
-  color: var(--text-primary);
-  margin-bottom: var(--space-2);
-}
-
-.empty-state p {
-  margin-bottom: var(--space-6);
-}
-
-.experiments-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: var(--space-6);
-}
-
-.experiment-card {
-  padding: var(--space-6);
-  cursor: pointer;
-  border: 1px solid var(--border-light);
-  transition: all var(--duration-normal) var(--ease-out);
-}
-
-.experiment-card:hover {
-  border-color: var(--primary-300);
-  box-shadow: var(--shadow-lg);
-}
-
-.experiment-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: var(--space-4);
-}
-
-.experiment-status {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.experiment-score {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--warning);
-  font-weight: var(--font-semibold);
-  font-size: var(--text-sm);
-}
-
-.experiment-content {
-  margin-bottom: var(--space-4);
-}
-
-.experiment-title {
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  color: var(--text-primary);
-  margin: 0 0 var(--space-2) 0;
-  line-height: var(--leading-tight);
-}
-
-.experiment-description {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  margin: 0 0 var(--space-4) 0;
-  line-height: var(--leading-relaxed);
-}
-
-.experiment-meta {
-  display: flex;
-  gap: var(--space-4);
-  margin-bottom: var(--space-4);
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-}
-
-.experiment-progress {
-  margin-top: var(--space-4);
-}
-
-.progress-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
-  margin-bottom: var(--space-2);
-}
-
-.experiment-footer {
-  display: flex;
-  justify-content: flex-end;
-}
-
-/* 学习统计 */
-.learning-stats {
-  margin-bottom: var(--space-8);
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-6);
-}
-
-.stat-card {
-  padding: var(--space-6);
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  border: 1px solid var(--border-light);
-}
-
-.stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-xl);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
-}
-
-.stat-icon.bg-primary { background: var(--primary-500); }
-.stat-icon.bg-success { background: var(--success); }
-.stat-icon.bg-warning { background: var(--warning); }
-.stat-icon.bg-info { background: var(--info); }
-
-.stat-info {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: var(--text-2xl);
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
-  line-height: 1;
-}
-
-.stat-name {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  margin-top: var(--space-1);
-}
-
-/* 工具类 */
-.ml-2 {
-  margin-left: var(--space-2);
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .banner-content {
-    flex-direction: column;
-    text-align: center;
-    gap: var(--space-6);
-  }
-
-  .welcome-stats {
-    justify-content: center;
-  }
-
-  .section-header {
-    flex-direction: column;
-    gap: var(--space-4);
-    align-items: stretch;
-  }
-
-  .action-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .experiments-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .welcome-banner {
-    padding: var(--space-6);
-  }
-
-  .welcome-title {
-    font-size: var(--text-2xl);
-  }
-
-  .welcome-subtitle {
-    font-size: var(--text-base);
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .experiment-meta {
-    flex-direction: column;
-    gap: var(--space-2);
   }
 }
 </style>

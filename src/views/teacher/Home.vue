@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../../stores/user'
 import { getTeacherExperiments } from '../../api/experiment'
@@ -122,6 +122,19 @@ const getStatusText = (status) => {
 onMounted(() => {
   fetchRecentExperiments()
   fetchStats()
+
+  // 设置页面背景
+  document.body.style.background = `linear-gradient(135deg,
+    rgba(71, 85, 105, 0.06) 0%,
+    rgba(51, 65, 85, 0.08) 50%,
+    rgba(30, 41, 59, 0.1) 100%)`
+  document.body.style.backgroundAttachment = 'fixed'
+})
+
+onUnmounted(() => {
+  // 恢复默认背景
+  document.body.style.background = ''
+  document.body.style.backgroundAttachment = ''
 })
 </script>
 
@@ -172,263 +185,276 @@ onMounted(() => {
         <div class="glow glow-2"></div>
         <div class="glow glow-3"></div>
       </div>
-    </div>
 
-    <!-- 欢迎横幅 -->
-    <div class="welcome-banner animate-fade-in-up">
-      <div class="banner-content">
-        <div class="welcome-text">
-          <h1 class="welcome-title">
-            欢迎回来，<span class="text-gradient">{{ userStore.userInfo?.name || '老师' }}</span>
-          </h1>
-          <p class="welcome-subtitle">
-            管理您的教学实验，指导学生探索深度学习的奥秘
-          </p>
-        </div>
-        <div class="welcome-stats">
-          <div class="stat-item">
-            <div class="stat-number">{{ stats.totalExperiments }}</div>
-            <div class="stat-label">总实验数</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number">{{ stats.activeExperiments }}</div>
-            <div class="stat-label">进行中</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number">{{ stats.pendingEvaluations }}</div>
-            <div class="stat-label">待评价</div>
-          </div>
-        </div>
-      </div>
-      <div class="banner-decoration">
-        <div class="floating-icon">
-          <el-icon size="60"><Management /></el-icon>
-        </div>
+      <!-- 额外装饰元素 -->
+      <div class="extra-decorations">
+        <div class="wave wave-1"></div>
+        <div class="wave wave-2"></div>
+        <div class="dot-pattern dot-pattern-1"></div>
+        <div class="dot-pattern dot-pattern-2"></div>
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
       </div>
     </div>
 
-    <!-- 快速操作 -->
-    <div class="quick-actions animate-fade-in-up animate-delay-200">
-      <h2 class="section-title">
-        <el-icon><Star /></el-icon>
-        快速操作
-      </h2>
-      <div class="action-grid">
-        <div
-          v-for="action in quickActions"
-          :key="action.title"
-          class="action-card"
-          @click="router.push(action.path)"
-        >
-          <div class="action-icon" :class="`bg-${action.color}`">
-            <el-icon size="24"><component :is="action.icon" /></el-icon>
+    <div class="main-content">
+      <!-- 欢迎横幅 -->
+      <div class="welcome-banner animate-fade-in-up">
+        <div class="banner-content">
+          <div class="welcome-text">
+            <h1 class="welcome-title">
+              欢迎回来，<span class="text-gradient">{{ userStore.userInfo?.name || '老师' }}</span>
+            </h1>
+            <p class="welcome-subtitle">
+              管理您的教学实验，指导学生探索深度学习的奥秘
+            </p>
           </div>
-          <div class="action-content">
-            <h3 class="action-title">{{ action.title }}</h3>
-            <p class="action-description">{{ action.description }}</p>
+          <div class="welcome-stats">
+            <div class="stat-item">
+              <div class="stat-number">{{ stats.totalExperiments }}</div>
+              <div class="stat-label">总实验数</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">{{ stats.activeExperiments }}</div>
+              <div class="stat-label">进行中</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">{{ stats.pendingEvaluations }}</div>
+              <div class="stat-label">待评价</div>
+            </div>
           </div>
-          <div class="action-arrow">
-            <el-icon><ArrowRight /></el-icon>
+        </div>
+        <div class="banner-decoration">
+          <div class="floating-icon">
+            <el-icon size="60"><Management /></el-icon>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- 最近实验 -->
-    <div class="recent-experiments animate-fade-in-up animate-delay-400">
-      <div class="section-header">
+      <!-- 快速操作 -->
+      <div class="quick-actions animate-fade-in-up animate-delay-200">
         <h2 class="section-title">
-          <el-icon><Clock /></el-icon>
-          最近实验
+          <el-icon><Star /></el-icon>
+          快速操作
         </h2>
-        <el-button
-          link
-          class="view-all-btn"
-          @click="goToExperimentManage"
-        >
-          管理全部
-          <el-icon class="ml-1"><ArrowRight /></el-icon>
-        </el-button>
+        <div class="action-grid">
+          <div
+            v-for="action in quickActions"
+            :key="action.title"
+            class="action-card"
+            @click="router.push(action.path)"
+          >
+            <div class="action-icon" :class="`bg-${action.color}`">
+              <el-icon size="24"><component :is="action.icon" /></el-icon>
+            </div>
+            <div class="action-content">
+              <h3 class="action-title">{{ action.title }}</h3>
+              <p class="action-description">{{ action.description }}</p>
+            </div>
+            <div class="action-arrow">
+              <el-icon><ArrowRight /></el-icon>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div v-loading="loading" class="experiments-container">
-        <div v-if="recentExperiments.length === 0" class="empty-state">
-          <el-icon size="80" class="empty-icon"><Notebook /></el-icon>
-          <h3>暂无实验</h3>
-          <p>开始创建您的第一个深度学习实验吧！</p>
-          <el-button type="primary" class="btn-gradient" @click="router.push('/teacher/experiment-create')">
-            <el-icon><Plus /></el-icon>
-            创建实验
+      <!-- 最近实验 -->
+      <div class="recent-experiments animate-fade-in-up animate-delay-400">
+        <div class="section-header">
+          <h2 class="section-title">
+            <el-icon><Clock /></el-icon>
+            最近实验
+          </h2>
+          <el-button
+            link
+            class="view-all-btn"
+            @click="goToExperimentManage"
+          >
+            管理全部
+            <el-icon class="ml-1"><ArrowRight /></el-icon>
           </el-button>
         </div>
 
-        <div v-else class="experiments-grid">
-          <div
-            v-for="experiment in recentExperiments"
-            :key="experiment.id"
-            class="experiment-card"
-            @click="viewExperiment(experiment.id)"
-          >
-            <div class="experiment-header">
-              <div class="experiment-status">
-                <el-tag
-                  :type="getStatusColor(experiment.status)"
+        <div v-loading="loading" class="experiments-container">
+          <div v-if="recentExperiments.length === 0" class="empty-state">
+            <el-icon size="80" class="empty-icon"><Notebook /></el-icon>
+            <h3>暂无实验</h3>
+            <p>开始创建您的第一个深度学习实验吧！</p>
+            <el-button type="primary" class="btn-gradient" @click="router.push('/teacher/experiment-create')">
+              <el-icon><Plus /></el-icon>
+              创建实验
+            </el-button>
+          </div>
+
+          <div v-else class="experiments-grid">
+            <div
+              v-for="experiment in recentExperiments"
+              :key="experiment.id"
+              class="experiment-card"
+              @click="viewExperiment(experiment.id)"
+            >
+              <div class="experiment-header">
+                <div class="experiment-status">
+                  <el-tag
+                    :type="getStatusColor(experiment.status)"
+                    size="small"
+                  >
+                    {{ getStatusText(experiment.status) }}
+                  </el-tag>
+                </div>
+                <div class="experiment-submissions" v-if="experiment.submissionCount">
+                  <el-icon><User /></el-icon>
+                  <span>{{ experiment.submissionCount }}人提交</span>
+                </div>
+              </div>
+
+              <div class="experiment-content">
+                <h3 class="experiment-title">{{ experiment.title }}</h3>
+                <p class="experiment-description">{{ experiment.description }}</p>
+
+                <div class="experiment-meta">
+                  <div class="meta-item">
+                    <el-icon><Clock /></el-icon>
+                    <span>{{ experiment.startTime }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <el-icon><Clock /></el-icon>
+                    <span>截止：{{ experiment.endTime }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="experiment-footer">
+                <el-button
+                  type="primary"
                   size="small"
+                  class="btn-gradient"
                 >
-                  {{ getStatusText(experiment.status) }}
-                </el-tag>
+                  管理实验
+                  <el-icon><ArrowRight /></el-icon>
+                </el-button>
               </div>
-              <div class="experiment-submissions" v-if="experiment.submissionCount">
-                <el-icon><User /></el-icon>
-                <span>{{ experiment.submissionCount }}人提交</span>
-              </div>
-            </div>
-
-            <div class="experiment-content">
-              <h3 class="experiment-title">{{ experiment.title }}</h3>
-              <p class="experiment-description">{{ experiment.description }}</p>
-
-              <div class="experiment-meta">
-                <div class="meta-item">
-                  <el-icon><Clock /></el-icon>
-                  <span>{{ experiment.startTime }}</span>
-                </div>
-                <div class="meta-item">
-                  <el-icon><Clock /></el-icon>
-                  <span>截止：{{ experiment.endTime }}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="experiment-footer">
-              <el-button
-                type="primary"
-                size="small"
-                class="btn-gradient"
-              >
-                管理实验
-                <el-icon><ArrowRight /></el-icon>
-              </el-button>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- 教学概览 -->
-    <div class="teaching-overview animate-fade-in-up animate-delay-600">
-      <h2 class="section-title">
-        <el-icon><DataAnalysis /></el-icon>
-        教学概览
-      </h2>
-      <div class="overview-container">
-        <div class="overview-card">
-          <div class="overview-header">
-            <h3>本周教学进度</h3>
-            <span class="overview-percentage">85%</span>
+      <!-- 教学概览 -->
+      <div class="teaching-overview animate-fade-in-up animate-delay-600">
+        <h2 class="section-title">
+          <el-icon><DataAnalysis /></el-icon>
+          教学概览
+        </h2>
+        <div class="overview-container">
+          <div class="overview-card">
+            <div class="overview-header">
+              <h3>本周教学进度</h3>
+              <span class="overview-percentage">85%</span>
+            </div>
+            <div class="overview-bar-container">
+              <div class="overview-bar" style="width: 85%"></div>
+            </div>
+            <p class="overview-description">已发布 4/5 个计划实验</p>
           </div>
-          <div class="overview-bar-container">
-            <div class="overview-bar" style="width: 85%"></div>
-          </div>
-          <p class="overview-description">已发布 4/5 个计划实验</p>
-        </div>
 
-        <div class="overview-card">
-          <div class="overview-header">
-            <h3>学生参与度</h3>
-            <span class="overview-percentage">92%</span>
-          </div>
-          <div class="overview-bar-container">
-            <div class="overview-bar participation-bar" style="width: 92%"></div>
-          </div>
-          <p class="overview-description">活跃学生比例</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- 教学统计 -->
-    <div class="teaching-stats animate-fade-in-up animate-delay-800">
-      <h2 class="section-title">
-        <el-icon><TrendCharts /></el-icon>
-        教学统计
-      </h2>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon bg-primary">
-            <el-icon><Document /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ stats.totalExperiments }}</div>
-            <div class="stat-name">总实验数</div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon bg-success">
-            <el-icon><Check /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ stats.activeExperiments }}</div>
-            <div class="stat-name">进行中</div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon bg-warning">
-            <el-icon><Trophy /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ stats.pendingEvaluations }}</div>
-            <div class="stat-name">待评价</div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon bg-info">
-            <el-icon><User /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ stats.totalStudents }}</div>
-            <div class="stat-name">学生总数</div>
+          <div class="overview-card">
+            <div class="overview-header">
+              <h3>学生参与度</h3>
+              <span class="overview-percentage">92%</span>
+            </div>
+            <div class="overview-bar-container">
+              <div class="overview-bar participation-bar" style="width: 92%"></div>
+            </div>
+            <p class="overview-description">活跃学生比例</p>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- 教学建议 -->
-    <div class="teaching-suggestions animate-fade-in-up animate-delay-1000">
-      <h2 class="section-title">
-        <el-icon><Star /></el-icon>
-        教学建议
-      </h2>
-      <div class="suggestions-grid">
-        <div class="suggestion-card">
-          <div class="suggestion-icon">
-            <el-icon><Management /></el-icon>
+      <!-- 教学统计 -->
+      <div class="teaching-stats animate-fade-in-up animate-delay-800">
+        <h2 class="section-title">
+          <el-icon><TrendCharts /></el-icon>
+          教学统计
+        </h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon bg-primary">
+              <el-icon><Document /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.totalExperiments }}</div>
+              <div class="stat-name">总实验数</div>
+            </div>
           </div>
-          <div class="suggestion-content">
-            <h3>优化实验设计</h3>
-            <p>根据学生反馈调整实验难度和内容安排</p>
+
+          <div class="stat-card">
+            <div class="stat-icon bg-success">
+              <el-icon><Check /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.activeExperiments }}</div>
+              <div class="stat-name">进行中</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon bg-warning">
+              <el-icon><Trophy /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.pendingEvaluations }}</div>
+              <div class="stat-name">待评价</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon bg-info">
+              <el-icon><User /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.totalStudents }}</div>
+              <div class="stat-name">学生总数</div>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div class="suggestion-card">
-          <div class="suggestion-icon">
-            <el-icon><Check /></el-icon>
+      <!-- 教学建议 -->
+      <div class="teaching-suggestions animate-fade-in-up animate-delay-1000">
+        <h2 class="section-title">
+          <el-icon><Star /></el-icon>
+          教学建议
+        </h2>
+        <div class="suggestions-grid">
+          <div class="suggestion-card">
+            <div class="suggestion-icon">
+              <el-icon><Management /></el-icon>
+            </div>
+            <div class="suggestion-content">
+              <h3>优化实验设计</h3>
+              <p>根据学生反馈调整实验难度和内容安排</p>
+            </div>
           </div>
-          <div class="suggestion-content">
-            <h3>及时评价反馈</h3>
-            <p>保持对学生提交作业的及时评价和指导</p>
-          </div>
-        </div>
 
-        <div class="suggestion-card">
-          <div class="suggestion-icon">
-            <el-icon><Files /></el-icon>
+          <div class="suggestion-card">
+            <div class="suggestion-icon">
+              <el-icon><Check /></el-icon>
+            </div>
+            <div class="suggestion-content">
+              <h3>及时评价反馈</h3>
+              <p>保持对学生提交作业的及时评价和指导</p>
+            </div>
           </div>
-          <div class="suggestion-content">
-            <h3>丰富教学资源</h3>
-            <p>增加更多样化的学习材料和参考资源</p>
+
+          <div class="suggestion-card">
+            <div class="suggestion-icon">
+              <el-icon><Files /></el-icon>
+            </div>
+            <div class="suggestion-content">
+              <h3>丰富教学资源</h3>
+              <p>增加更多样化的学习材料和参考资源</p>
+            </div>
           </div>
         </div>
       </div>
@@ -436,27 +462,19 @@ onMounted(() => {
   </div>
 </template>
 
-<style>
-/* 全局背景样式 - 不使用scoped */
-body {
-  background: linear-gradient(135deg,
-    rgba(71, 85, 105, 0.06) 0%,
-    rgba(51, 65, 85, 0.08) 50%,
-    rgba(30, 41, 59, 0.1) 100%) !important;
-  background-attachment: fixed !important;
-}
-</style>
-
 <style scoped>
 .teacher-home {
+  position: relative;
+}
+
+.main-content {
   padding: 0;
   max-width: 1200px;
   margin: 0 auto;
   position: relative;
   min-height: 100vh;
+  z-index: 1;
 }
-
-
 
 @keyframes backgroundShift {
   0%, 100% {
@@ -477,7 +495,7 @@ body {
   right: 0;
   bottom: 0;
   pointer-events: none;
-  z-index: -1;
+  z-index: 0;
   overflow: hidden;
 }
 
@@ -494,7 +512,7 @@ body {
   top: 10%;
   left: 5%;
   animation-delay: 0s;
-  background: linear-gradient(135deg, rgba(240, 147, 251, 0.08), rgba(245, 87, 108, 0.08));
+  background: linear-gradient(135deg, rgba(240, 147, 251, 0.15), rgba(245, 87, 108, 0.15));
 }
 
 .floating-shape.shape-2 {
@@ -503,7 +521,7 @@ body {
   top: 70%;
   right: 10%;
   animation-delay: 3s;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.06), rgba(118, 75, 162, 0.06));
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.12), rgba(118, 75, 162, 0.12));
 }
 
 .floating-shape.shape-3 {
@@ -512,7 +530,7 @@ body {
   bottom: 15%;
   left: 15%;
   animation-delay: 6s;
-  background: linear-gradient(135deg, rgba(67, 233, 123, 0.05), rgba(56, 249, 215, 0.05));
+  background: linear-gradient(135deg, rgba(67, 233, 123, 0.1), rgba(56, 249, 215, 0.1));
 }
 
 .floating-shape.shape-4 {
@@ -521,7 +539,7 @@ body {
   top: 30%;
   right: 25%;
   animation-delay: 9s;
-  background: linear-gradient(135deg, rgba(79, 172, 254, 0.07), rgba(0, 242, 254, 0.07));
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.14), rgba(0, 242, 254, 0.14));
 }
 
 .floating-shape.shape-5 {
@@ -530,7 +548,7 @@ body {
   top: 50%;
   left: 80%;
   animation-delay: 12s;
-  background: linear-gradient(135deg, rgba(240, 147, 251, 0.06), rgba(245, 87, 108, 0.06));
+  background: linear-gradient(135deg, rgba(240, 147, 251, 0.12), rgba(245, 87, 108, 0.12));
 }
 
 .floating-shape.shape-6 {
@@ -539,7 +557,7 @@ body {
   bottom: 40%;
   right: 5%;
   animation-delay: 15s;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
 }
 
 @keyframes floatShape {
@@ -575,7 +593,7 @@ body {
   position: absolute;
   width: 30px;
   height: 30px;
-  background: linear-gradient(45deg, rgba(240, 147, 251, 0.1), rgba(245, 87, 108, 0.1));
+  background: linear-gradient(45deg, rgba(240, 147, 251, 0.18), rgba(245, 87, 108, 0.18));
   transform: rotate(45deg);
   animation: rotateDiamond 18s linear infinite;
 }
@@ -595,7 +613,7 @@ body {
 .circle {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(240, 147, 251, 0.08), transparent);
+  background: radial-gradient(circle, rgba(240, 147, 251, 0.15), transparent);
   animation: pulseCircle 12s ease-in-out infinite;
 }
 
@@ -632,7 +650,7 @@ body {
   height: 0;
   border-left: 15px solid transparent;
   border-right: 15px solid transparent;
-  border-bottom: 10px solid rgba(245, 87, 108, 0.1);
+  border-bottom: 10px solid rgba(245, 87, 108, 0.18);
   transform: rotate(35deg);
 }
 
@@ -705,9 +723,9 @@ body {
 
 .particle {
   position: absolute;
-  width: 3px;
-  height: 3px;
-  background: rgba(240, 147, 251, 0.7);
+  width: 4px;
+  height: 4px;
+  background: rgba(240, 147, 251, 0.8);
   border-radius: 50%;
   animation: particleFloat 14s ease-in-out infinite;
 }
@@ -716,56 +734,56 @@ body {
   top: 12%;
   left: 18%;
   animation-delay: 0s;
-  background: rgba(240, 147, 251, 0.7);
+  background: rgba(240, 147, 251, 0.8);
 }
 
 .particle-2 {
   top: 28%;
   right: 22%;
   animation-delay: 2.5s;
-  background: rgba(245, 87, 108, 0.7);
+  background: rgba(245, 87, 108, 0.8);
 }
 
 .particle-3 {
   top: 48%;
   left: 6%;
   animation-delay: 5s;
-  background: rgba(102, 126, 234, 0.7);
+  background: rgba(102, 126, 234, 0.8);
 }
 
 .particle-4 {
   bottom: 32%;
   right: 15%;
   animation-delay: 7.5s;
-  background: rgba(118, 75, 162, 0.7);
+  background: rgba(118, 75, 162, 0.8);
 }
 
 .particle-5 {
   bottom: 18%;
   left: 32%;
   animation-delay: 10s;
-  background: rgba(240, 147, 251, 0.7);
+  background: rgba(240, 147, 251, 0.8);
 }
 
 .particle-6 {
   top: 38%;
   right: 38%;
   animation-delay: 12.5s;
-  background: rgba(245, 87, 108, 0.7);
+  background: rgba(245, 87, 108, 0.8);
 }
 
 .particle-7 {
   bottom: 48%;
   left: 72%;
   animation-delay: 1.5s;
-  background: rgba(102, 126, 234, 0.7);
+  background: rgba(102, 126, 234, 0.8);
 }
 
 .particle-8 {
   top: 72%;
   right: 6%;
   animation-delay: 8.5s;
-  background: rgba(118, 75, 162, 0.7);
+  background: rgba(118, 75, 162, 0.8);
 }
 
 @keyframes particleFloat {
@@ -800,7 +818,7 @@ body {
 
 .grid-line {
   position: absolute;
-  background: linear-gradient(90deg, transparent, rgba(240, 147, 251, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(240, 147, 251, 0.3), transparent);
   animation: gridMove 16s ease-in-out infinite;
 }
 
@@ -865,7 +883,7 @@ body {
   height: 200px;
   top: 10%;
   left: 10%;
-  background: radial-gradient(circle, rgba(240, 147, 251, 0.15), transparent);
+  background: radial-gradient(circle, rgba(240, 147, 251, 0.25), transparent);
   animation-delay: 0s;
 }
 
@@ -874,7 +892,7 @@ body {
   height: 150px;
   bottom: 20%;
   right: 15%;
-  background: radial-gradient(circle, rgba(245, 87, 108, 0.12), transparent);
+  background: radial-gradient(circle, rgba(245, 87, 108, 0.2), transparent);
   animation-delay: 3s;
 }
 
@@ -883,7 +901,7 @@ body {
   height: 180px;
   top: 50%;
   right: 40%;
-  background: radial-gradient(circle, rgba(102, 126, 234, 0.1), transparent);
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.18), transparent);
   animation-delay: 6s;
 }
 
@@ -894,6 +912,129 @@ body {
   }
   50% {
     transform: scale(1.3);
+    opacity: 0.6;
+  }
+}
+
+/* 额外装饰元素 */
+.extra-decorations {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.wave {
+  position: absolute;
+  width: 100%;
+  height: 100px;
+  background: linear-gradient(90deg, transparent, rgba(240, 147, 251, 0.1), transparent);
+  clip-path: polygon(0 50%, 100% 30%, 100% 70%, 0 90%);
+  animation: waveMove 20s ease-in-out infinite;
+}
+
+.wave-1 {
+  top: 20%;
+  animation-delay: 0s;
+}
+
+.wave-2 {
+  bottom: 30%;
+  animation-delay: 10s;
+  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.08), transparent);
+}
+
+@keyframes waveMove {
+  0%, 100% {
+    transform: translateX(-50px) scaleY(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateX(50px) scaleY(1.2);
+    opacity: 0.6;
+  }
+}
+
+.dot-pattern {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  background-image: radial-gradient(circle, rgba(240, 147, 251, 0.2) 2px, transparent 2px);
+  background-size: 20px 20px;
+  animation: dotFloat 25s ease-in-out infinite;
+}
+
+.dot-pattern-1 {
+  top: 15%;
+  right: 20%;
+  animation-delay: 5s;
+}
+
+.dot-pattern-2 {
+  bottom: 25%;
+  left: 10%;
+  animation-delay: 15s;
+  background-image: radial-gradient(circle, rgba(102, 126, 234, 0.15) 2px, transparent 2px);
+}
+
+@keyframes dotFloat {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.1);
+    opacity: 0.7;
+  }
+}
+
+.gradient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(30px);
+  animation: orbFloat 18s ease-in-out infinite;
+}
+
+.orb-1 {
+  width: 150px;
+  height: 150px;
+  top: 25%;
+  left: 70%;
+  background: radial-gradient(circle, rgba(240, 147, 251, 0.3), rgba(245, 87, 108, 0.1));
+  animation-delay: 2s;
+}
+
+.orb-2 {
+  width: 100px;
+  height: 100px;
+  bottom: 35%;
+  right: 25%;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.25), rgba(118, 75, 162, 0.1));
+  animation-delay: 8s;
+}
+
+.orb-3 {
+  width: 120px;
+  height: 120px;
+  top: 60%;
+  left: 15%;
+  background: radial-gradient(circle, rgba(67, 233, 123, 0.2), rgba(56, 249, 215, 0.08));
+  animation-delay: 14s;
+}
+
+@keyframes orbFloat {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) scale(1);
+    opacity: 0.5;
+  }
+  33% {
+    transform: translateY(-40px) translateX(30px) scale(1.2);
+    opacity: 0.8;
+  }
+  66% {
+    transform: translateY(20px) translateX(-20px) scale(0.9);
     opacity: 0.6;
   }
 }
