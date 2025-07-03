@@ -96,14 +96,6 @@ onMounted(() => {
     <!-- 顶部导航栏 -->
     <header class="top-header glass">
       <div class="header-left">
-        <button
-          class="menu-toggle"
-          @click="toggleSidebar"
-          :class="{ active: sidebarCollapsed }"
-        >
-          <el-icon><Menu /></el-icon>
-        </button>
-
         <div class="logo-section">
           <div class="logo-icon teacher">
             <el-icon size="24"><Management /></el-icon>
@@ -147,22 +139,42 @@ onMounted(() => {
           'mobile-show': showMobileMenu
         }"
       >
+        <!-- 侧边栏头部 -->
+        <div class="sidebar-header">
+          <div class="sidebar-logo" v-show="!sidebarCollapsed">
+            <span class="logo-text">教师端</span>
+          </div>
+          <button
+            class="sidebar-toggle"
+            @click="toggleSidebar"
+            :class="{ collapsed: sidebarCollapsed }"
+          >
+            <el-icon><Menu /></el-icon>
+          </button>
+        </div>
+
         <nav class="sidebar-nav">
           <div class="nav-items">
             <template v-for="item in menuItems" :key="item.key">
               <!-- 单级菜单 -->
-              <router-link
+              <el-tooltip
                 v-if="!item.children"
-                :to="item.path"
-                class="nav-item"
-                :class="{ active: isActiveRoute(item.path) }"
+                :content="item.title"
+                placement="right"
+                :disabled="!sidebarCollapsed"
               >
-                <div class="nav-icon">
-                  <el-icon><component :is="item.icon" /></el-icon>
-                </div>
-                <span class="nav-text">{{ item.title }}</span>
-                <div class="nav-indicator"></div>
-              </router-link>
+                <router-link
+                  :to="item.path"
+                  class="nav-item"
+                  :class="{ active: isActiveRoute(item.path) }"
+                >
+                  <div class="nav-icon">
+                    <el-icon><component :is="item.icon" /></el-icon>
+                  </div>
+                  <span class="nav-text">{{ item.title }}</span>
+                  <div class="nav-indicator"></div>
+                </router-link>
+              </el-tooltip>
 
               <!-- 多级菜单 -->
               <div v-else class="nav-group">
@@ -170,9 +182,9 @@ onMounted(() => {
                   <div class="nav-icon">
                     <el-icon><component :is="item.icon" /></el-icon>
                   </div>
-                  <span class="nav-text">{{ item.title }}</span>
+                  <span class="nav-text" v-show="!sidebarCollapsed">{{ item.title }}</span>
                 </div>
-                <div class="nav-group-items">
+                <div class="nav-group-items" v-show="!sidebarCollapsed">
                   <router-link
                     v-for="child in item.children"
                     :key="child.path"
@@ -269,30 +281,6 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-}
-
-.menu-toggle {
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: rgba(240, 147, 251, 0.1);
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all var(--duration-normal) var(--ease-out);
-  color: var(--teacher-primary);
-}
-
-.menu-toggle:hover {
-  background: rgba(240, 147, 251, 0.2);
-  transform: scale(1.05);
-}
-
-.menu-toggle.active {
-  background: var(--teacher-gradient);
-  color: white;
 }
 
 .logo-section {
@@ -395,7 +383,7 @@ onMounted(() => {
 
 /* 侧边栏 - 教师端样式 */
 .sidebar {
-  width: 280px;
+  width: 200px;
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(20px);
   border-right: 1px solid var(--border-light);
@@ -405,37 +393,113 @@ onMounted(() => {
 }
 
 .sidebar.collapsed {
-  width: 80px;
+  width: 60px;
+}
+
+/* 侧边栏头部 - 教师端样式 */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: var(--space-4);
+  min-height: 60px;
+}
+
+.sidebar.collapsed .sidebar-header {
+  padding: var(--space-3);
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-logo {
+  display: none;
+}
+
+.sidebar-logo .logo-text {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.sidebar-toggle {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--gray-100);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-out);
+  color: var(--text-secondary);
+  position: absolute;
+  right: var(--space-3);
+}
+
+.sidebar.collapsed .sidebar-toggle {
+  position: static;
+  background: linear-gradient(135deg, rgba(240, 147, 251, 0.2), rgba(245, 87, 108, 0.2));
+  color: var(--teacher-primary);
+}
+
+.sidebar-toggle:hover {
+  background: linear-gradient(135deg, rgba(240, 147, 251, 0.3), rgba(245, 87, 108, 0.3));
+  color: var(--teacher-secondary);
+  transform: scale(1.05);
 }
 
 .sidebar-nav {
-  padding: var(--space-6) 0;
-  height: 100%;
+  padding: 0 var(--space-4) var(--space-6);
+  height: calc(100% - 80px);
+  overflow-y: auto;
 }
 
 .nav-items {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: 0 var(--space-4);
+  padding: 0 var(--space-3);
+}
+
+.sidebar.collapsed .nav-items {
+  padding: 0 var(--space-2);
 }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3);
   border-radius: var(--radius-xl);
   text-decoration: none;
   color: var(--text-secondary);
   transition: all var(--duration-normal) var(--ease-out);
   position: relative;
   overflow: hidden;
+  justify-content: flex-start;
+}
+
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: var(--space-3) var(--space-2);
+  gap: 0;
 }
 
 .nav-item:hover {
   background: linear-gradient(135deg, rgba(240, 147, 251, 0.1), rgba(245, 87, 108, 0.1));
   color: var(--teacher-primary);
+}
+
+.sidebar:not(.collapsed) .nav-item:hover {
   transform: translateX(4px);
 }
 
@@ -462,11 +526,15 @@ onMounted(() => {
 .nav-text {
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
-  transition: opacity var(--duration-normal) var(--ease-out);
+  white-space: nowrap;
+  opacity: 1;
+  transition: all var(--duration-normal) var(--ease-out);
 }
 
 .sidebar.collapsed .nav-text {
   opacity: 0;
+  width: 0;
+  overflow: hidden;
 }
 
 .nav-indicator {
@@ -487,22 +555,30 @@ onMounted(() => {
   margin-bottom: var(--space-4);
 }
 
+.sidebar.collapsed .nav-group {
+  display: none;
+}
+
 .nav-group-title {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-3);
   color: var(--text-tertiary);
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  margin-bottom: var(--space-2);
 }
 
 .nav-group-items {
-  margin-left: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-left: var(--space-6);
+  padding-left: var(--space-3);
   border-left: 2px solid var(--border-light);
-  padding-left: var(--space-4);
 }
 
 .nav-sub-item {

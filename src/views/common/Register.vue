@@ -410,9 +410,11 @@ const goToLogin = () => {
 
 .brand-subtitle {
   font-size: 1.2rem;
-  opacity: 0.9;
+  opacity: 1;
   margin: 0;
   font-weight: 300;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .benefits {
