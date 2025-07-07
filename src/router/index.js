@@ -25,8 +25,8 @@ const routes = [
         component: () => import('../views/student/Home.vue')
       },
       {
-        path: 'experiment-list',
-        name: 'StudentExperimentList',
+        path: 'experiment-list',   //在这里定义好路由的路径（这个是要调用的路径）
+        name: 'StudentExperimentList',  // 下面名字没什么用
         component: () => import('../views/student/experiment/ExperimentList.vue')
       },
       {
@@ -48,6 +48,17 @@ const routes = [
         path: 'profile',
         name: 'StudentProfile',
         component: () => import('../views/student/profile/Profile.vue')
+      },
+      // 添加了一条新的路由地址
+      {
+        path: 'score',
+        name: 'Scoreranking',
+        component: () => import('../views/student/experiment/Experimentscore.vue')  //把要跳转的vue页面路径写到这里
+      },
+      {
+        path: 'experiment-upload/:id',
+        name: 'ExperimentUpload',
+        component: () => import('../views/student/experiment/ExperimentUpload.vue')
       }
     ]
   },
@@ -97,6 +108,12 @@ const routes = [
         path: 'profile',
         name: 'TeacherProfile',
         component: () => import('../views/teacher/profile/Profile.vue')
+      }
+      ,
+      {
+        path: 'tscore',
+        name: 'Tscoreranking',
+        component: () => import('../views/teacher/experiment/Experimentscore.vue')
       }
     ]
   }
