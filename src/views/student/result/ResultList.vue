@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { getResultList } from '../../../api/experiment'
+import { getStudentResults } from '../../../api/experiment'
 
 const results = ref([])
 const loading = ref(false)
@@ -31,7 +31,7 @@ const minScore = computed(() => {
 const fetchResults = async () => {
   loading.value = true
   try {
-    const res = await getResultList({
+    const res = await getStudentResults({
       page: currentPage.value,
       limit: pageSize.value
     })

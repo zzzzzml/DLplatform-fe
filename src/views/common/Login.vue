@@ -44,6 +44,7 @@ const handleLogin = async () => {
 
         ElMessage.success('登录成功！')
 
+        // 使用原来的路由，忽略后端返回的redirect_url
         setTimeout(() => {
           if (userStore.isTeacher) {
             console.log('跳转到教师首页')

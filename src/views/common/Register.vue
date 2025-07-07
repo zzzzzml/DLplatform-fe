@@ -1,9 +1,9 @@
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { register } from '../../api/auth'
 import { ElMessage } from 'element-plus'
-import { User, Lock, Message, UserFilled, Reading, ArrowLeft } from '@element-plus/icons-vue'
+import { User, Lock, Message, UserFilled, Reading, ArrowLeft, Key } from '@element-plus/icons-vue'
 import 'animate.css'
 
 const router = useRouter()
@@ -14,7 +14,8 @@ const registerForm = reactive({
   confirmPassword: '',
   name: '',
   email: '',
-  role: 'student'
+  role: 'student',
+  verificationCode: '' // 教师邀请码
 })
 
 const rules = {
@@ -52,12 +53,42 @@ const rules = {
   ],
   role: [
     { required: true, message: '请选择角色', trigger: 'change' }
+  ],
+  verificationCode: [
+    {
+      required: true,
+      message: '请输入邀请码',
+      trigger: 'blur',
+      validator: (rule, value, callback) => {
+        if (registerForm.role === 'teacher') {
+          if (!value) {
+            callback(new Error('教师注册需要邀请码'))
+          } else if (value !== '1234') {
+            callback(new Error('邀请码错误'))
+          } else {
+            callback()
+          }
+        } else {
+          callback()
+        }
+      }
+    }
   ]
 }
 
 const formRef = ref(null)
 const loading = ref(false)
 const showForm = ref(false)
+
+// 计算属性：是否显示邀请码字段
+const showVerificationCode = computed(() => registerForm.role === 'teacher')
+
+// 监听角色变化，清空邀请码
+watch(() => registerForm.role, (newRole) => {
+  if (newRole === 'student') {
+    registerForm.verificationCode = ''
+  }
+})
 
 // 动画控制
 onMounted(() => {
@@ -73,10 +104,30 @@ const handleRegister = async () => {
     if (valid) {
       try {
         loading.value = true
-        const { confirmPassword, ...registerData } = registerForm
-        await register(registerData)
-        ElMessage.success('注册成功，请登录')
-        router.push('/')
+
+        // 构建注册数据，根据API要求调整字段名
+        const registerData = {
+          username: registerForm.username,
+          password: registerForm.password,
+          user_type: registerForm.role,
+          realname: registerForm.name,
+          email: registerForm.email
+        }
+
+        // 如果是教师，添加邀请码
+        if (registerForm.role === 'teacher') {
+          registerData.verification_code = registerForm.verificationCode
+        }
+
+        const res = await register(registerData)
+
+        // 处理响应
+        if (res.code === 200) {
+          ElMessage.success(res.message || '注册成功，请登录')
+          router.push('/')
+        } else {
+          ElMessage.error(res.message || '注册失败')
+        }
       } catch (error) {
         console.error('Register failed:', error)
         ElMessage.error('注册失败，请稍后重试')
@@ -239,6 +290,25 @@ const goToLogin = () => {
                   <el-radio-button label="student">学生</el-radio-button>
                   <el-radio-button label="teacher">教师</el-radio-button>
                 </el-radio-group>
+              </div>
+            </el-form-item>
+
+            <!-- 教师邀请码输入框 -->
+            <el-form-item
+              v-if="showVerificationCode"
+              prop="verificationCode"
+              class="verification-code-item"
+            >
+              <el-input
+                v-model="registerForm.verificationCode"
+                placeholder="请输入教师邀请码"
+                size="large"
+                :prefix-icon="Key"
+                class="form-input verification-input"
+              />
+              <div class="verification-tip">
+                <el-icon><Key /></el-icon>
+                <span>教师注册需要邀请码，请联系管理员获取</span>
               </div>
             </el-form-item>
 
@@ -597,6 +667,56 @@ const goToLogin = () => {
   border-color: #667eea;
   color: white;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* 邀请码相关样式 */
+.verification-code-item {
+  margin-top: 1rem;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.verification-input :deep(.el-input__wrapper) {
+  border: 2px solid #ffd700;
+  background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+}
+
+.verification-input :deep(.el-input__wrapper:hover) {
+  border-color: #ffcc00;
+  box-shadow: 0 4px 12px rgba(255, 204, 0, 0.2);
+}
+
+.verification-input :deep(.el-input__wrapper.is-focus) {
+  border-color: #ffcc00;
+  box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.15);
+}
+
+.verification-tip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border-radius: 8px;
+  border-left: 4px solid #ffd700;
+  font-size: 0.85rem;
+  color: #856404;
+}
+
+.verification-tip .el-icon {
+  color: #ffd700;
+  font-size: 1rem;
 }
 
 .register-button {

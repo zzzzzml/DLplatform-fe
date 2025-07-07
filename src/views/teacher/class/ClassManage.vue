@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { getClassList, createClass, updateClass, deleteClass, getClassStudents, addStudentToClass, removeStudentFromClass } from '../../../api/class'
+import { getClasses, createClass, updateClass, deleteClass, getClassStudents, addStudentToClass, removeStudentFromClass } from '../../../api/class'
 
 const classes = ref([])
 const currentClass = ref(null)
@@ -40,7 +40,7 @@ const studentFormRef = ref(null)
 const fetchClasses = async () => {
   loading.value = true
   try {
-    const res = await getClassList()
+    const res = await getClasses()
     classes.value = res.data || []
   } catch (error) {
     console.error('Failed to fetch classes:', error)

@@ -3,7 +3,7 @@ import request from './index'
 // 登录
 export function login(data) {
   return request({
-    url: '/auth/login',
+    url: '/login',
     method: 'post',
     data
   })
@@ -12,7 +12,7 @@ export function login(data) {
 // 注册
 export function register(data) {
   return request({
-    url: '/auth/register',
+    url: '/register',
     method: 'post',
     data
   })
@@ -35,10 +35,22 @@ export function updateUserInfo(data) {
   })
 }
 
+// 更新用户资料（兼容性别名）
+export const updateUserProfile = updateUserInfo
+
+// 更新用户密码
+export function updateUserPassword(data) {
+  return request({
+    url: '/auth/change-password',
+    method: 'put',
+    data
+  })
+}
+
 // 登出
 export function logout() {
   return request({
     url: '/auth/logout',
     method: 'post'
   })
-} 
+}

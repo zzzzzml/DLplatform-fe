@@ -20,35 +20,59 @@ export const useUserStore = defineStore('user', {
       try {
         // 本地开发模式：当用户名和密码都是123时直接登录
         if (credentials.username === '123' && credentials.password === '123') {
-          // 创建模拟的token和用户信息
-          const mockToken = 'mock_token_' + Date.now()
+          // 使用前端选择的角色创建模拟用户信息
           const mockUserInfo = {
-            id: 1,
-            username: credentials.username,
-            name: '测试用户',
-            role: credentials.role,
-            email: 'test@example.com'
+            user_id: credentials.role === 'student' ? 1 : 2,
+            user_type: credentials.role,
+            realname: credentials.role === 'student' ? 'jack' : '王老师',
+            email: credentials.role === 'student' ? '123@163.com' : 'wang@example.com',
+            username: credentials.username
           }
-          
-          // 保存到store和localStorage
-          this.token = mockToken
+
+          // 保存用户信息
           this.userInfo = mockUserInfo
           this.role = credentials.role
-          
-          localStorage.setItem('token', mockToken)
-          localStorage.setItem('userInfo', JSON.stringify(mockUserInfo))
-          localStorage.setItem('role', credentials.role)
-          
+          this.token = 'mock_token_' + Date.now()
+
+          // 保存到localStorage
+          localStorage.setItem('token', this.token)
+          localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
+          localStorage.setItem('role', this.role)
+
           ElMessage.success('测试登录成功')
-          return { token: mockToken }
+          return { token: this.token }
         }
-        
-        // 如果不是测试账号，则调用真实的API
-        const res = await login(credentials)
-        this.token = res.token
-        localStorage.setItem('token', res.token)
-        await this.fetchUserInfo()
-        return res
+
+        // 调用真实的API，只传递username和password
+        const loginData = {
+          username: credentials.username,
+          password: credentials.password
+        }
+        const res = await login(loginData)
+
+        // 处理API响应
+        if (res.code === 200) {
+          // 保存用户信息
+          this.userInfo = {
+            user_id: res.data.user_id,
+            user_type: res.data.user_type,
+            realname: res.data.realname,
+            email: res.data.email,
+            username: credentials.username
+          }
+          this.role = res.data.user_type
+          this.token = 'api_token_' + Date.now() // 如果API没有返回token，生成一个
+
+          // 保存到localStorage
+          localStorage.setItem('token', this.token)
+          localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
+          localStorage.setItem('role', this.role)
+
+          ElMessage.success(res.message)
+          return res
+        } else {
+          throw new Error(res.message || '登录失败')
+        }
       } catch (error) {
         console.error('Login failed:', error)
         throw error
@@ -56,20 +80,27 @@ export const useUserStore = defineStore('user', {
     },
 
     async fetchUserInfo() {
-      // 如果是测试账号，直接返回localStorage中的用户信息
-      if (this.token && this.token.startsWith('mock_token_')) {
+      // 如果是测试账号或API登录，直接返回已存储的用户信息
+      if (this.userInfo) {
         return this.userInfo
       }
-      
+
+      // 如果没有用户信息，尝试从API获取（兼容旧版本）
       try {
         const userInfo = await getUserInfo()
-        this.userInfo = userInfo
-        this.role = userInfo.role
-        
-        localStorage.setItem('userInfo', JSON.stringify(userInfo))
-        localStorage.setItem('role', userInfo.role)
-        
-        return userInfo
+        this.userInfo = {
+          user_id: userInfo.user_id || userInfo.id,
+          user_type: userInfo.user_type || userInfo.role,
+          realname: userInfo.realname || userInfo.name,
+          email: userInfo.email,
+          username: userInfo.username
+        }
+        this.role = this.userInfo.user_type
+
+        localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
+        localStorage.setItem('role', this.role)
+
+        return this.userInfo
       } catch (error) {
         console.error('Failed to fetch user info:', error)
         throw error
