@@ -55,6 +55,15 @@ export function getStudentExperiments(params) {
   })
 }
 
+// 获取某实验下所有学生成绩（POST）
+export function getStudentExperimentScore(experimentId) {
+  return request({
+    url: '/student/experiment/score',
+    method: 'post',
+    data: { experiment_id: experimentId }
+  })
+}
+
 // 提交实验
 export function submitExperiment(id, data) {
   return request({
