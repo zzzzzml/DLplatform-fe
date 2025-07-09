@@ -1,26 +1,28 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useExperimentStore } from '../../../stores/experiment'
+import { getExperimentsList } from '../../../api/experiment'
 import { ElMessage } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
 
 const router = useRouter()
-const experimentStore = useExperimentStore()
 
 const loading = ref(false)
+const experiments = ref([])
 const searchKeyword = ref('')
-const currentPage = ref(1)
-const pageSize = ref(10)
+const filteredExperiments = ref([])
 
 // 获取实验列表
 const fetchExperiments = async () => {
   loading.value = true
   try {
-    await experimentStore.fetchExperiments({
-      page: currentPage.value,
-      limit: pageSize.value,
-      keyword: searchKeyword.value
-    })
+    const response = await getExperimentsList()
+    if (response.code === 200) {
+      experiments.value = response.data || []
+      filteredExperiments.value = experiments.value
+    } else {
+      ElMessage.error(response.message || '获取实验列表失败')
+    }
   } catch (error) {
     console.error('Failed to fetch experiments:', error)
     ElMessage.error('获取实验列表失败')
@@ -34,16 +36,28 @@ const viewExperiment = (id) => {
   router.push(`/student/experiment-detail/${id}`)
 }
 
-// 处理分页变化
-const handlePageChange = (page) => {
-  currentPage.value = page
-  fetchExperiments()
-}
-
 // 处理搜索
 const handleSearch = () => {
-  currentPage.value = 1
-  fetchExperiments()
+  if (!searchKeyword.value.trim()) {
+    filteredExperiments.value = experiments.value
+  } else {
+    filteredExperiments.value = experiments.value.filter(exp =>
+      exp.experiment_name.toLowerCase().includes(searchKeyword.value.toLowerCase())
+    )
+  }
+}
+
+// 格式化日期时间
+const formatDateTime = (dateTimeStr) => {
+  if (!dateTimeStr) return '-'
+  const date = new Date(dateTimeStr)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 onMounted(() => {
@@ -73,34 +87,22 @@ onMounted(() => {
 
     <el-table
       v-loading="loading"
-      :data="experimentStore.experiments"
+      :data="filteredExperiments"
       border
       style="width: 100%"
     >
-      <el-table-column prop="title" label="实验名称" min-width="200" />
-      <el-table-column prop="teacherName" label="发布教师" width="120" />
-      <el-table-column prop="startTime" label="开始时间" width="180" />
-      <el-table-column prop="endTime" label="截止时间" width="180" />
-      <el-table-column prop="status" label="状态" width="100">
+      <el-table-column prop="experiment_name" label="实验名称" min-width="300" />
+      <el-table-column prop="deadline" label="截止时间" width="200">
         <template #default="{ row }">
-          <el-tag :type="row.status === 'active' ? 'success' : 'info'">
-            {{ row.status === 'active' ? '进行中' : '已结束' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="submitted" label="提交状态" width="100">
-        <template #default="{ row }">
-          <el-tag :type="row.submitted ? 'success' : 'warning'">
-            {{ row.submitted ? '已提交' : '未提交' }}
-          </el-tag>
+          {{ formatDateTime(row.deadline) }}
         </template>
       </el-table-column>
       <el-table-column label="操作" width="150" fixed="right">
         <template #default="{ row }">
-          <el-button 
-            type="primary" 
-            size="small" 
-            @click="viewExperiment(row.id)"
+          <el-button
+            type="primary"
+            size="small"
+            @click="viewExperiment(row.experiment_id)"
           >
             查看
           </el-button>
@@ -108,16 +110,7 @@ onMounted(() => {
       </el-table-column>
     </el-table>
 
-    <div class="pagination">
-      <el-pagination
-        background
-        layout="total, prev, pager, next"
-        :total="experimentStore.total"
-        :current-page="currentPage"
-        :page-size="pageSize"
-        @current-change="handlePageChange"
-      />
-    </div>
+
   </div>
 </template>
 

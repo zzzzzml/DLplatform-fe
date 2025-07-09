@@ -1,28 +1,28 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getTeacherExperiments, deleteExperiment } from '../../../api/experiment'
+import { getExperimentsList, deleteExperiment } from '../../../api/experiment'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, Plus } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
 const loading = ref(false)
 const experiments = ref([])
-const total = ref(0)
-const currentPage = ref(1)
-const pageSize = ref(10)
 const searchKeyword = ref('')
+const filteredExperiments = ref([])
 
-// 获取教师的实验列表
+// 获取实验列表
 const fetchExperiments = async () => {
   loading.value = true
   try {
-    const res = await getTeacherExperiments({
-      page: currentPage.value,
-      limit: pageSize.value,
-      keyword: searchKeyword.value
-    })
-    experiments.value = res.data
-    total.value = res.total
+    const response = await getExperimentsList()
+    if (response.code === 200) {
+      experiments.value = response.data || []
+      filteredExperiments.value = experiments.value
+    } else {
+      ElMessage.error(response.message || '获取实验列表失败')
+    }
   } catch (error) {
     console.error('Failed to fetch experiments:', error)
     ElMessage.error('获取实验列表失败')
@@ -49,7 +49,7 @@ const handleDelete = async (id) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
+
     await deleteExperiment(id)
     ElMessage.success('删除成功')
     fetchExperiments()
@@ -69,16 +69,28 @@ const viewSubmissions = (id) => {
   })
 }
 
-// 处理分页变化
-const handlePageChange = (page) => {
-  currentPage.value = page
-  fetchExperiments()
-}
-
 // 处理搜索
 const handleSearch = () => {
-  currentPage.value = 1
-  fetchExperiments()
+  if (!searchKeyword.value.trim()) {
+    filteredExperiments.value = experiments.value
+  } else {
+    filteredExperiments.value = experiments.value.filter(exp =>
+      exp.experiment_name.toLowerCase().includes(searchKeyword.value.toLowerCase())
+    )
+  }
+}
+
+// 格式化日期时间
+const formatDateTime = (dateTimeStr) => {
+  if (!dateTimeStr) return '-'
+  const date = new Date(dateTimeStr)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 onMounted(() => {
@@ -113,41 +125,36 @@ onMounted(() => {
 
     <el-table
       v-loading="loading"
-      :data="experiments"
+      :data="filteredExperiments"
       border
       style="width: 100%"
     >
-      <el-table-column prop="title" label="实验名称" min-width="200" />
-      <el-table-column prop="startTime" label="开始时间" width="180" />
-      <el-table-column prop="endTime" label="截止时间" width="180" />
-      <el-table-column prop="status" label="状态" width="100">
+      <el-table-column prop="experiment_name" label="实验名称" min-width="300" />
+      <el-table-column prop="deadline" label="截止时间" width="200">
         <template #default="{ row }">
-          <el-tag :type="row.status === 'active' ? 'success' : 'info'">
-            {{ row.status === 'active' ? '进行中' : '已结束' }}
-          </el-tag>
+          {{ formatDateTime(row.deadline) }}
         </template>
       </el-table-column>
-      <el-table-column prop="submissionCount" label="提交数量" width="100" />
       <el-table-column label="操作" width="250" fixed="right">
         <template #default="{ row }">
-          <el-button 
-            type="primary" 
-            size="small" 
-            @click="editExperiment(row.id)"
+          <el-button
+            type="primary"
+            size="small"
+            @click="editExperiment(row.experiment_id)"
           >
             编辑
           </el-button>
-          <el-button 
-            type="info" 
-            size="small" 
-            @click="viewSubmissions(row.id)"
+          <el-button
+            type="info"
+            size="small"
+            @click="viewSubmissions(row.experiment_id)"
           >
             查看提交
           </el-button>
-          <el-button 
-            type="danger" 
-            size="small" 
-            @click="handleDelete(row.id)"
+          <el-button
+            type="danger"
+            size="small"
+            @click="handleDelete(row.experiment_id)"
           >
             删除
           </el-button>
@@ -155,16 +162,7 @@ onMounted(() => {
       </el-table-column>
     </el-table>
 
-    <div class="pagination">
-      <el-pagination
-        background
-        layout="total, prev, pager, next"
-        :total="total"
-        :current-page="currentPage"
-        :page-size="pageSize"
-        @current-change="handlePageChange"
-      />
-    </div>
+
   </div>
 </template>
 

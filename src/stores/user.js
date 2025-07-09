@@ -6,7 +6,8 @@ export const useUserStore = defineStore('user', {
   state: () => ({
     token: localStorage.getItem('token') || '',
     userInfo: JSON.parse(localStorage.getItem('userInfo')) || null,
-    role: localStorage.getItem('role') || '' // 'student' 或 'teacher'
+    role: localStorage.getItem('role') || '', // 'student' 或 'teacher'
+    lastExperimentInfo: JSON.parse(localStorage.getItem('lastExperimentInfo')) || null // 最近发布的实验信息
   }),
 
   getters: {

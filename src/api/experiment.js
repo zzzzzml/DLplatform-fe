@@ -9,6 +9,14 @@ export function getExperiments(params) {
   })
 }
 
+// 获取实验列表（新接口）
+export function getExperimentsList() {
+  return request({
+    url: '/experiments/list',
+    method: 'get'
+  })
+}
+
 // 兼容性导出（确保两个名称都可用）
 export const getExperimentList = getExperiments
 
@@ -26,6 +34,18 @@ export function createExperiment(data) {
     url: '/experiments',
     method: 'post',
     data
+  })
+}
+
+// 发布实验（带附件）
+export function publishExperimentWithAttachment(formData) {
+  return request({
+    url: '/teacher/experiment/publish_with_attachment',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   })
 }
 
