@@ -29,8 +29,8 @@ export function getUserInfo() {
 // 更新用户信息
 export function updateUserInfo(data) {
   return request({
-    url: '/auth/user-info',
-    method: 'put',
+    url: '/profile/update',
+    method: 'post',
     data
   })
 }
