@@ -80,6 +80,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
+import { getStudentExperiments } from '../../../api/experiment'
 
 const router = useRouter()
 
@@ -88,119 +89,25 @@ const searchKeyword = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
 
-// 静态实验数据（不含状态字段，由计算属性自动生成）
-const experiments = ref([
-  {
-    id: 1,
-    title: "基于Vue3的组件化开发实践",
-    teacherName: "张教授",
-    startTime: "2025-06-01 09:00:00",
-    endTime: "2025-07-10 23:59:59", // 未来时间（进行中）
-    submitted: false
-  },
-  {
-    id: 2,
-    title: "Element Plus组件库综合应用",
-    teacherName: "李老师",
-    startTime: "2025-05-15 08:30:00",
-    endTime: "2025-07-05 23:59:59", // 未来时间（进行中）
-    submitted: true
-  },
-  {
-    id: 3,
-    title: "Vue Router路由守卫实现",
-    teacherName: "王教授",
-    startTime: "2025-04-20 10:00:00",
-    endTime: "2025-06-30 23:59:59", // 过去时间（已结束）
-    submitted: true
-  },
-  {
-    id: 4,
-    title: "Pinia状态管理高级用法",
-    teacherName: "赵老师",
-    startTime: "2025-06-05 14:00:00",
-    endTime: "2025-07-15 23:59:59", // 未来时间（进行中）
-    submitted: false
-  },
-  {
-    id: 5,
-    title: "Vue3组合式API实战",
-    teacherName: "刘教授",
-    startTime: "2025-03-10 09:00:00",
-    endTime: "2025-06-20 23:59:59", // 过去时间（已结束）
-    submitted: true
-  },
-  {
-    id: 6,
-    title: "响应式原理与双向绑定实现",
-    teacherName: "孙老师",
-    startTime: "2025-06-10 10:30:00",
-    endTime: "2025-07-20 23:59:59", // 未来时间（进行中）
-    submitted: false
-  },
-  {
-    id: 7,
-    title: "Vue项目性能优化策略",
-    teacherName: "周教授",
-    startTime: "2025-05-01 09:00:00",
-    endTime: "2025-06-15 23:59:59", // 过去时间（已结束）
-    submitted: true
-  },
-  {
-    id: 8,
-    title: "单元测试与Vue Test Utils",
-    teacherName: "吴老师",
-    startTime: "2025-06-15 13:30:00",
-    endTime: "2025-07-30 23:59:59", // 未来时间（进行中）
-    submitted: false
-  },
-  {
-    id: 9,
-    title: "TypeScript与Vue3结合使用",
-    teacherName: "郑教授",
-    startTime: "2025-04-01 08:00:00",
-    endTime: "2025-06-01 23:59:59", // 过去时间（已结束）
-    submitted: true
-  },
-  {
-    id: 10,
-    title: "Vue3+Vite项目构建流程",
-    teacherName: "陈老师",
-    startTime: "2025-06-08 15:00:00",
-    endTime: "2025-07-08 23:59:59", // 未来时间（进行中）
-    submitted: false
-  }
-])
+// 实验数据（从后端加载）
+const experiments = ref([])
 
 // 计算属性：自动生成状态（基于当前时间与截止时间对比）
 const filteredExperiments = computed(() => {
   const now = new Date()
   return experiments.value
-    // 搜索过滤
-    .filter(experiment => 
-      experiment.title.includes(searchKeyword.value)
-    )
     // 补充状态字段
     .map(experiment => {
-      const endTime = new Date(experiment.endTime)
+      const endTime = new Date(experiment.endTime || experiment.deadline)
       return {
         ...experiment,
         status: endTime > now ? 'active' : 'completed'
       }
     })
-    // 分页处理
-    .slice(
-      (currentPage.value - 1) * pageSize.value,
-      currentPage.value * pageSize.value
-    )
 })
 
-// 总数量计算
-const total = computed(() => {
-  return experiments.value.filter(experiment => 
-    experiment.title.includes(searchKeyword.value)
-  ).length
-})
+// 总数量
+const total = ref(0)
 
 // 上传实验
 const uploadExperiment = (id) => {
@@ -212,22 +119,42 @@ const viewExperiment = (id) => {
   router.push(`/student/score`)
 }
 
+// 加载实验列表
+const fetchExperiments = async () => {
+  loading.value = true
+  try {
+    const params = {
+      page: currentPage.value,
+      limit: pageSize.value,
+      keyword: searchKeyword.value
+    }
+    const res = await getStudentExperiments(params)
+    // 兼容后端返回格式
+    experiments.value = res.data || res.list || res || []
+    total.value = res.total || (experiments.value ? experiments.value.length : 0)
+  } catch (e) {
+    ElMessage.error('实验列表加载失败')
+    experiments.value = []
+    total.value = 0
+  } finally {
+    loading.value = false
+  }
+}
+
 // 处理分页变化
 const handlePageChange = (page) => {
   currentPage.value = page
+  fetchExperiments()
 }
 
 // 处理搜索
 const handleSearch = () => {
   currentPage.value = 1
+  fetchExperiments()
 }
 
 onMounted(() => {
-  // 模拟加载延迟
-  loading.value = true
-  setTimeout(() => {
-    loading.value = false
-  }, 800)
+  fetchExperiments()
 })
 </script>
 

@@ -1,23 +1,15 @@
 import request from './index'
 
-// 上传实验文件
-export function uploadExperimentFile(data) {
-  return request({
-    url: '/experiments/upload',
-    method: 'post',
-    data,
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+// 上传实验压缩包（zip/rar/7z）
+export function uploadExperimentFile(formData) {
+  return request.post('/experiments/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
 
-// 获取上传历史
+// 获取实验上传历史
 export function getUploadHistory(experimentId) {
-  return request({
-    url: `/experiments/${experimentId}/uploads`,
-    method: 'get'
-  })
+  return request.get(`/experiments/${experimentId}/uploads`)
 }
 
 // 删除上传的文件

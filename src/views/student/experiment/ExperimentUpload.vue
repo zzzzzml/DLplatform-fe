@@ -40,6 +40,7 @@
         
         <!-- 拖拽上传区域 -->
         <el-upload
+          v-model:file-list="fileList"
           ref="uploadRef"
           class="upload-dragger"
           drag
@@ -50,9 +51,8 @@
           :on-success="handleUploadSuccess"
           :on-error="handleUploadError"
           :on-progress="handleUploadProgress"
-          :file-list="fileList"
           :limit="1"
-          accept=".pth"
+          accept=".zip,.rar,.7z"
           :auto-upload="false"
         >
           <el-icon class="el-icon--upload"><upload-filled /></el-icon>
@@ -61,7 +61,7 @@
           </div>
           <template #tip>
             <div class="el-upload__tip">
-              只能上传 .pth 文件，且不超过 10MB
+              只能上传 .zip/.rar/.7z 文件，且不超过 10MB
             </div>
           </template>
         </el-upload>
@@ -156,9 +156,9 @@
         <h3>提交说明</h3>
         <div class="notes-content">
           <ul>
-            <li>请确保上传的是模型权重文件（.pth格式）</li>
+            <li>请确保上传的是实验代码压缩包（.zip/.rar/.7z格式）</li>
             <li>文件大小不能超过10MB</li>
-            <li>请确保文件为有效的PyTorch模型权重</li>
+            <li>压缩包内请包含所有实验相关代码和文件</li>
             <li>提交后将无法修改，请仔细检查后再提交</li>
             <li>系统将自动检测文件格式</li>
           </ul>
@@ -182,11 +182,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { UploadFilled, Document } from '@element-plus/icons-vue'
 import { uploadExperimentFile, getUploadHistory } from '../../../api/upload'
+import { getExperimentById } from '../../../api/experiment'
 
 const route = useRoute()
 const router = useRouter()
@@ -194,23 +195,19 @@ const router = useRouter()
 // 响应式数据
 const uploadRef = ref(null)
 const fileList = ref([])
+// 调试用，打印fileList变化
+watch(fileList, (val) => {
+  console.log('fileList变化:', val)
+})
 const uploading = ref(false)
 const uploadProgress = ref(0)
 const uploadHistory = ref([])
 
-// 实验信息（从路由参数获取实验ID，这里使用静态数据）
-const experimentInfo = ref({
-  id: route.params.id,
-  title: '基于Vue3的组件化开发实践',
-  teacherName: '张教授',
-  startTime: '2025-06-01 09:00:00',
-  endTime: '2025-07-10 23:59:59',
-  status: 'active'
-})
+// 实验信息（从接口获取）
+const experimentInfo = ref({})
 
 // 上传配置
 const uploadUrl = computed(() => {
-  // 这里应该配置真实的上传API地址
   return '/api/experiments/upload'
 })
 
@@ -223,7 +220,7 @@ const uploadHeaders = computed(() => {
 
 const uploadData = computed(() => {
   return {
-    experimentId: experimentInfo.value.id,
+    experimentId: experimentInfo.value.id, // 与后端参数名一致
     studentId: JSON.parse(localStorage.getItem('userInfo'))?.id || 1
   }
 })
@@ -240,9 +237,10 @@ const formatFileSize = (bytes) => {
 // 上传前验证
 const beforeUpload = (file) => {
   // 检查文件类型
-  const isPth = file.name.endsWith('.pth')
-  if (!isPth) {
-    ElMessage.error('只能上传.pth文件！')
+  const allowedExts = ['.zip', '.rar', '.7z']
+  const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase()
+  if (!allowedExts.includes(ext)) {
+    ElMessage.error('只能上传.zip/.rar/.7z文件！')
     return false
   }
 
@@ -259,7 +257,9 @@ const beforeUpload = (file) => {
     return false
   }
 
-  return true
+  // 关键：手动加到 fileList，保证按钮可用
+  // fileList.value = [file] // 移除此行，由v-model:file-list管理
+  return true // 阻止el-upload自动上传，由手动触发submitUpload
 }
 
 // 上传成功处理
@@ -304,48 +304,41 @@ const submitUpload = async () => {
     ElMessage.warning('请先选择要上传的文件')
     return
   }
-
+  const file = fileList.value[0]
+  if (!file.raw) {
+    ElMessage.error('文件未正确加载，请重新选择')
+    return
+  }
+  uploading.value = true
+  uploadProgress.value = 0
+  file.status = 'uploading'
+  // 创建FormData
+  const formData = new FormData()
+  formData.append('file', file.raw)
+  formData.append('experimentId', experimentInfo.value.id)
+  formData.append('studentId', JSON.parse(localStorage.getItem('userInfo'))?.id || 1)
+  // 打印formData所有内容
+  for (let [key, value] of formData.entries()) {
+    console.log('formData:', key, value)
+  }
   try {
-    await ElMessageBox.confirm(
-      '确定要提交这个实验文件吗？提交后将无法修改。',
-      '确认提交',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-
-    uploading.value = true
-    uploadProgress.value = 0
-    
-    const file = fileList.value[0]
-    file.status = 'uploading'
-    
-    // 创建FormData对象
-    const formData = new FormData()
-    formData.append('file', file.raw || file)
-    formData.append('experimentId', experimentInfo.value.id)
-    formData.append('studentId', JSON.parse(localStorage.getItem('userInfo'))?.id || 1)
-    
-    try {
-      // 调用真实的上传API
-      const response = await uploadExperimentFile(formData)
-      
-      if (response.success) {
-        handleUploadSuccess(response, file)
-      } else {
-        handleUploadError(new Error(response.message), file)
-      }
-    } catch (error) {
-      // 如果API调用失败，使用模拟上传
-      console.log('API调用失败，使用模拟上传:', error)
-      simulateUpload(file)
+    const response = await uploadExperimentFile(formData)
+    if (response.code === 200) {
+      ElMessage.success('文件上传成功！')
+      file.status = 'success'
+      uploadProgress.value = 100
+      uploading.value = false
+      // 上传成功后刷新上传历史
+      await fetchUploadHistory()
+      setTimeout(() => {
+        ElMessage.success('实验提交成功！')
+        router.push('/student/experiment-list')
+      }, 1000)
+    } else {
+      handleUploadError(new Error(response.message || '上传失败'), file)
     }
-    
   } catch (error) {
-    // 用户取消
-    console.log('用户取消提交')
+    handleUploadError(error, file)
   }
 }
 
@@ -363,20 +356,11 @@ const simulateUpload = (file) => {
 // 获取上传历史
 const fetchUploadHistory = async () => {
   try {
-    const response = await getUploadHistory(experimentInfo.value.id)
-    uploadHistory.value = response.data || []
+    const response = await getUploadHistory(experimentInfo.value.id || route.params.id)
+    // 兼容后端返回格式
+    uploadHistory.value = response.data || response || []
   } catch (error) {
-    console.log('获取上传历史失败:', error)
-    // 使用模拟数据
-    uploadHistory.value = [
-      {
-        id: 1,
-        fileName: 'experiment_v1.pth',
-        fileSize: 2048,
-        uploadTime: '2025-01-15 14:30:00',
-        status: 'success'
-      }
-    ]
+    uploadHistory.value = []
   }
 }
 
@@ -387,7 +371,28 @@ const goBack = () => {
 
 // 页面加载时获取实验信息和上传历史
 onMounted(async () => {
-  console.log('实验ID:', route.params.id)
+  // 获取实验信息
+  try {
+    const res = await getExperimentById(route.params.id)
+    experimentInfo.value = res.data || res || {}
+    // 自动判断状态，兼容deadline字段
+    if (experimentInfo.value.deadline) {
+      let end = new Date(experimentInfo.value.deadline.replace(' ', 'T'))
+      if (isNaN(end)) end = new Date(experimentInfo.value.deadline)
+      const now = new Date()
+      experimentInfo.value.status = end > now ? 'active' : 'ended'
+      experimentInfo.value.endTime = experimentInfo.value.deadline // 兼容模板
+    } else if (experimentInfo.value.endTime) {
+      let end = new Date(experimentInfo.value.endTime.replace(' ', 'T'))
+      if (isNaN(end)) end = new Date(experimentInfo.value.endTime)
+      const now = new Date()
+      experimentInfo.value.status = end > now ? 'active' : 'ended'
+    } else {
+      experimentInfo.value.status = 'unknown'
+    }
+  } catch (e) {
+    experimentInfo.value = {}
+  }
   await fetchUploadHistory()
 })
 </script>

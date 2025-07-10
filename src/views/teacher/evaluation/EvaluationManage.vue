@@ -32,11 +32,8 @@
         </div>
       </template>
       <div class="evaluation-table">
-        <el-button type="primary" @click="downloadAllPth" style="margin-bottom: 10px;">
-          一键下载全部
-        </el-button>
-        <el-button type="warning" @click="autoEvaluateAll" style="margin-bottom: 10px; margin-left: 10px;">
-          一键评测所有
+        <el-button type="primary" @click="downloadAndEvaluateAll" style="margin-bottom: 10px;">
+          一键下载+评测所有
         </el-button>
         <el-table
           v-loading="loading"
@@ -44,12 +41,12 @@
           style="width: 100%"
           border
         >
-          <el-table-column prop="experimentTitle" label="实验名称" min-width="120"></el-table-column>
-          <el-table-column prop="studentName" label="学生姓名" min-width="100"></el-table-column>
-          <el-table-column prop="className" label="班级" min-width="100"></el-table-column>
-          <el-table-column prop="submitTime" label="提交时间" min-width="150">
+          <el-table-column prop="experiment_title" label="实验名称" min-width="120"></el-table-column>
+          <el-table-column prop="student_name" label="学生姓名" min-width="100"></el-table-column>
+          <el-table-column prop="class_name" label="班级" min-width="100"></el-table-column>
+          <el-table-column prop="submit_time" label="提交时间" min-width="150">
             <template #default="scope">
-              {{ scope.row.submitTime ? formatDate(scope.row.submitTime) : '未提交' }}
+              {{ scope.row.submit_time ? formatDate(scope.row.submit_time) : '未提交' }}
             </template>
           </el-table-column>
           <el-table-column prop="status" label="状态" min-width="100">
@@ -85,10 +82,10 @@
                 评测
               </el-button>
               <el-button
-                v-if="scope.row.pthUrl"
+                v-if="scope.row.file_path && scope.row.file_name"
                 type="success"
                 size="small"
-                @click="downloadPth(scope.row)"
+                @click="downloadFile(scope.row)"
               >
                 下载
               </el-button>
@@ -115,15 +112,14 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-// import { getExperimentList } from '@/api/experiment'
-// import { getEvaluations } from '@/api/experiment'
-// import { getClasses } from '@/api/class'
+import { getTeacherExperiments, getEvaluations } from '@/api/experiment'
+import { getClasses } from '@/api/class'
 
 const router = useRouter()
 const loading = ref(false)
-const evaluationList = ref([])
 const experiments = ref([])
 const classes = ref([])
+const evaluationList = ref([])
 
 const filter = reactive({
   experimentId: '',
@@ -139,187 +135,132 @@ const pagination = reactive({
 
 onMounted(async () => {
   await Promise.all([fetchExperiments(), fetchClasses()])
-  // fetchEvaluations 会在 filter.experimentId 变化时自动调用
+  fetchEvaluations()
 })
 
-// 监听实验选择，自动拉取评价列表
 watch(() => filter.experimentId, (val) => {
   if (val) fetchEvaluations()
 })
 
-// 获取实验列表（静态数据）
 const fetchExperiments = async () => {
   try {
-    const data = [
-      { id: 1, title: '实验一：图像分类' },
-      { id: 2, title: '实验二：目标检测' }
-    ]
-    experiments.value = data
-    // 默认选中第一个实验
-    if (!filter.experimentId && data.length > 0) {
-      filter.experimentId = data[0].id
+    const res = await getTeacherExperiments()
+    experiments.value = res.data || res || []
+    if (!filter.experimentId && experiments.value.length > 0) {
+      filter.experimentId = experiments.value[0].id
     }
   } catch (error) {
-    console.error('获取实验列表失败', error)
     ElMessage.error('获取实验列表失败')
   }
 }
 
-// 获取班级列表（静态数据）
 const fetchClasses = async () => {
   try {
-    const data = [
-      { id: 1, name: '2021级1班' },
-      { id: 2, name: '2021级2班' }
-    ]
-    classes.value = data
+    const res = await getClasses()
+    classes.value = res.data || res || []
   } catch (error) {
-    console.error('获取班级列表失败', error)
     ElMessage.error('获取班级列表失败')
   }
 }
 
-// 获取评价列表（静态数据）
 const fetchEvaluations = async () => {
   loading.value = true
   try {
-    // 静态数据模拟不同实验
-    let data = []
-    if (filter.experimentId === 1) {
-      data = [
-        {
-          id: 101,
-          experimentTitle: '实验一：图像分类',
-          studentName: '张三',
-          className: '2021级1班',
-          submitTime: '2024-06-01 10:00:00',
-          status: 1, // 1: 已提交，2: 已评价，3: 已评测
-          score: null,
-          pthUrl: '/static/pth/zhangsan.pth',
-          _evaluating: false
-        },
-        {
-          id: 102,
-          experimentTitle: '实验一：图像分类',
-          studentName: '李四',
-          className: '2021级1班',
-          submitTime: '2024-06-01 10:10:00',
-          status: 1,
-          score: null,
-          pthUrl: '/static/pth/lisi.pth',
-          _evaluating: false
-        }
-      ]
-    } else if (filter.experimentId === 2) {
-      data = [
-        {
-          id: 201,
-          experimentTitle: '实验二：目标检测',
-          studentName: '王五',
-          className: '2021级2班',
-          submitTime: '2024-06-02 09:00:00',
-          status: 1,
-          score: null,
-          pthUrl: '/static/pth/wangwu.pth',
-          _evaluating: false
-        }
-      ]
+    const params = {
+      experiment_id: filter.experimentId,
+      page: pagination.currentPage,
+      limit: pagination.pageSize
     }
-    evaluationList.value = data
-    pagination.total = data.length
+    if (filter.classId) params.class_id = filter.classId
+    if (filter.status !== '' && filter.status !== null && filter.status !== undefined) params.status = filter.status
+
+    const res = await getEvaluations(params)
+    evaluationList.value = res.data?.list || res.list || res.data || []
+    pagination.total = res.data?.total || res.total || (evaluationList.value ? evaluationList.value.length : 0)
   } catch (error) {
-    console.error('获取评价列表失败', error)
     ElMessage.error('获取评价列表失败')
   } finally {
     loading.value = false
   }
 }
 
-// 下载单个pth
-const downloadPth = (row) => {
-  if (!row.pthUrl) return
+const downloadFile = (row) => {
+  if (!row.file_path || !row.file_name) return
   const link = document.createElement('a')
-  link.href = row.pthUrl
-  link.download = `${row.studentName}.pth`
+  link.href = `/static/${row.file_path}/${row.file_name}`
+  link.download = row.file_name
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
 }
 
-// 一键下载全部pth（静态模拟，实际可用zip.js等打包）
-const downloadAllPth = () => {
-  let hasFile = false
-  evaluationList.value.forEach(row => {
-    if (row.pthUrl) {
-      hasFile = true
-      const link = document.createElement('a')
-      link.href = row.pthUrl
-      link.download = `${row.studentName}.pth`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-    }
-  })
-  if (hasFile) {
-    ElMessage.success('已开始下载全部文件')
-  } else {
-    ElMessage.warning('没有可下载的文件')
-  }
-}
-
-// 单个自动评测
-const handleAutoEvaluate = (row) => {
+const handleAutoEvaluate = async (row) => {
   if (row._evaluating || row.status === 3) return
   row._evaluating = true
-  setTimeout(() => {
-    row.score = Math.floor(Math.random() * 21) + 80 // 80-100分
-    row.status = 3 // 3: 已评测
+  try {
+    const res = await fetch(`/test?experiment_id=${filter.experimentId}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    }).then(r => r.json())
+    if (res.code === 200) {
+      ElMessage.success(`${row.student_name} 评测完成`)
+      fetchEvaluations()
+    } else {
+      ElMessage.error(res.message || '评测失败')
+    }
+  } catch (e) {
+    ElMessage.error('评测失败')
+  } finally {
     row._evaluating = false
-    ElMessage.success(`${row.studentName} 评测完成`)
-  }, 1000)
+  }
 }
 
-// 一键评测所有
-const autoEvaluateAll = () => {
-  let toEval = evaluationList.value.filter(row => row.status !== 3 && row.pthUrl)
-  if (toEval.length === 0) {
-    ElMessage.info('没有需要评测的学生')
+// 一键下载并评测所有
+const downloadAndEvaluateAll = async () => {
+  if (!filter.experimentId) {
+    ElMessage.warning('请选择实验')
     return
   }
-  let finished = 0
-  toEval.forEach(row => {
-    row._evaluating = true
-    setTimeout(() => {
-      row.score = Math.floor(Math.random() * 21) + 80
-      row.status = 3
-      row._evaluating = false
-      finished++
-      if (finished === toEval.length) {
-        ElMessage.success('全部评测完成')
-      }
-    }, 1000 + Math.random() * 1000)
-  })
+  try {
+    loading.value = true
+    // 先请求后端一键下载+评测接口，假设接口为 /test?experiment_id=xxx
+    const res = await fetch(`/test?experiment_id=${filter.experimentId}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    }).then(r => r.json())
+    if (res.code === 200 && res.download_url) {
+      // 下载文件
+      window.open(res.download_url, '_blank')
+      ElMessage.success(res.message || '一键下载并评测完成')
+      fetchEvaluations()
+    } else if (res.code === 200) {
+      ElMessage.success(res.message || '一键评测完成')
+      fetchEvaluations()
+    } else {
+      ElMessage.error(res.message || '一键下载并评测失败')
+    }
+  } catch (e) {
+    ElMessage.error('一键下载并评测失败')
+  } finally {
+    loading.value = false
+  }
 }
 
-// 日期格式化
 const formatDate = (date) => {
   if (!date) return ''
   const d = new Date(date)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-// 获取状态类型
 const getStatusType = (status) => {
   switch (status) {
-    case 0: return 'info'     // 未提交
-    case 1: return 'warning'  // 已提交未评测
-    case 2: return 'success'  // 已评价
-    case 3: return 'primary'  // 已评测
+    case 0: return 'info'
+    case 1: return 'warning'
+    case 2: return 'success'
+    case 3: return 'primary'
     default: return 'info'
   }
 }
-
-// 获取状态文字
 const getStatusText = (status) => {
   switch (status) {
     case 0: return '未提交'
@@ -330,17 +271,14 @@ const getStatusText = (status) => {
   }
 }
 
-// 查看/评价详情
 const handleViewDetail = (row) => {
   router.push(`/teacher/evaluation-detail/${row.id}`)
 }
 
-// 重新评价
 const handleReEvaluate = (row) => {
   router.push(`/teacher/evaluation-detail/${row.id}?reEvaluate=true`)
 }
 
-// 分页处理
 const handleSizeChange = (size) => {
   pagination.pageSize = size
   fetchEvaluations()
