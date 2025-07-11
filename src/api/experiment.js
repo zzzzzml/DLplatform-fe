@@ -60,7 +60,7 @@ export function createExperiment(data) {
 // 发布实验（带附件）
 export function publishExperimentWithAttachment(formData) {
   return request({
-    url: '/teacher/experiment/publish_with_attachment',
+    url: '/teacher/experiment/publish',
     method: 'post',
     data: formData,
     headers: {
@@ -166,3 +166,27 @@ export function evaluateSubmissionTeacher(id, data) {
     data
   })
 } 
+
+// 学生端获取实验排名
+export function getExperimentRanking(experimentId, studentId) {
+  const data = { experiment_id: experimentId };
+  if (studentId !== undefined) {
+    data.student_id = studentId;
+  }
+  return request({
+    url: '/student/experiment/scores',
+    method: 'post',
+    data
+  })
+} 
+
+// 教师端获取实验排名
+export function getTeacherExperimentRanking(experimentId) {
+  return request({
+    url: '/teacher/experiment/scores',
+    method: 'post',
+    data: {
+      experiment_id: experimentId
+    }
+  })
+}

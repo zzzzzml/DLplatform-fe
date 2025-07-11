@@ -19,19 +19,29 @@ export function getClassById(id) {
 
 // 创建班级
 export function createClass(data) {
+  // 确保参数格式正确
+  const requestData = {
+    class_name: data.class_name
+  }
+  
   return request({
     url: '/classes',
     method: 'post',
-    data
+    data: requestData
   })
 }
 
 // 更新班级
 export function updateClass(id, data) {
+  // 确保参数格式正确
+  const requestData = {
+    class_name: data.class_name
+  }
+  
   return request({
     url: `/classes/${id}`,
     method: 'put',
-    data
+    data: requestData
   })
 }
 

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { getClasses, createClass, updateClass, deleteClass, getClassStudents, addStudentToClass, removeStudentFromClass } from '../../../api/class'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const classes = ref([])
 const currentClass = ref(null)
@@ -13,7 +14,7 @@ const confirmLoading = ref(false)
 
 // 班级表单
 const classForm = reactive({
-  name: '',
+  class_name: '',
   description: ''
 })
 
@@ -24,7 +25,7 @@ const studentForm = reactive({
 
 // 班级表单规则
 const classRules = {
-  name: [{ required: true, message: '请输入班级名称', trigger: 'blur' }]
+  class_name: [{ required: true, message: '请输入班级名称', trigger: 'blur' }]
 }
 
 // 学生表单规则
@@ -42,6 +43,7 @@ const fetchClasses = async () => {
   try {
     const res = await getClasses()
     classes.value = res.data || []
+    console.log('获取到的班级列表:', classes.value)
   } catch (error) {
     console.error('Failed to fetch classes:', error)
     ElMessage.error('获取班级列表失败')
@@ -69,19 +71,19 @@ const fetchClassStudents = async (classId) => {
 // 选择班级
 const handleSelectClass = (classItem) => {
   currentClass.value = classItem
-  fetchClassStudents(classItem.id)
+  fetchClassStudents(classItem.class_id)
 }
 
 // 打开创建班级对话框
 const openCreateClassDialog = () => {
-  classForm.name = ''
+  classForm.class_name = ''
   classForm.description = ''
   classFormVisible.value = true
 }
 
 // 打开编辑班级对话框
 const openEditClassDialog = (classItem) => {
-  classForm.name = classItem.name
+  classForm.class_name = classItem.class_name || classItem.name
   classForm.description = classItem.description || ''
   classFormVisible.value = true
 }
@@ -94,9 +96,9 @@ const saveClass = async () => {
     if (valid) {
       confirmLoading.value = true
       try {
-        if (currentClass.value && currentClass.value.id) {
+        if (currentClass.value && currentClass.value.class_id) {
           // 更新班级
-          await updateClass(currentClass.value.id, classForm)
+          await updateClass(currentClass.value.class_id, classForm)
           ElMessage.success('班级更新成功')
         } else {
           // 创建班级
@@ -118,16 +120,16 @@ const saveClass = async () => {
 // 删除班级
 const handleDeleteClass = async (classItem) => {
   try {
-    await ElMessageBox.confirm(`确定要删除班级 "${classItem.name}" 吗？`, '提示', {
+    await ElMessageBox.confirm(`确定要删除班级 "${classItem.class_name}" 吗？`, '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
     
-    await deleteClass(classItem.id)
+    await deleteClass(classItem.class_id)
     ElMessage.success('班级删除成功')
     fetchClasses()
-    if (currentClass.value && currentClass.value.id === classItem.id) {
+    if (currentClass.value && currentClass.value.class_id === classItem.class_id) {
       currentClass.value = null
       students.value = []
     }
@@ -153,9 +155,9 @@ const addStudent = async () => {
     if (valid) {
       confirmLoading.value = true
       try {
-        await addStudentToClass(currentClass.value.id, studentForm)
+        await addStudentToClass(currentClass.value.class_id, studentForm)
         ElMessage.success('学生添加成功')
-        fetchClassStudents(currentClass.value.id)
+        fetchClassStudents(currentClass.value.class_id)
         studentFormVisible.value = false
       } catch (error) {
         console.error('Failed to add student:', error)
@@ -178,9 +180,9 @@ const handleRemoveStudent = async (student) => {
       type: 'warning'
     })
     
-    await removeStudentFromClass(currentClass.value.id, student.id)
+    await removeStudentFromClass(currentClass.value.class_id, student.id)
     ElMessage.success('学生移除成功')
-    fetchClassStudents(currentClass.value.id)
+    fetchClassStudents(currentClass.value.class_id)
   } catch (error) {
     if (error !== 'cancel') {
       console.error('Remove failed:', error)
@@ -214,17 +216,17 @@ onMounted(() => {
           <el-empty v-if="classes.length === 0" description="暂无班级" />
           <el-menu
             v-else
-            :default-active="currentClass ? currentClass.id : ''"
+            :default-active="currentClass ? currentClass.class_id : ''"
             class="class-menu"
           >
             <el-menu-item
               v-for="classItem in classes"
-              :key="classItem.id"
-              :index="classItem.id"
+              :key="classItem.class_id"
+              :index="classItem.class_id"
               @click="handleSelectClass(classItem)"
             >
               <div class="class-item">
-                <span>{{ classItem.name }}</span>
+                <span>{{ classItem.class_name }}</span>
                 <div class="class-actions">
                   <el-button type="primary" size="small" circle @click.stop="openEditClassDialog(classItem)">
                     <el-icon><Edit /></el-icon>
@@ -244,7 +246,7 @@ onMounted(() => {
           <template #header>
             <div class="card-header">
               <span>
-                {{ currentClass ? `${currentClass.name} - 学生列表` : '学生列表' }}
+                {{ currentClass ? `${currentClass.class_name} - 学生列表` : '学生列表' }}
               </span>
               <el-button
                 v-if="currentClass"
@@ -303,8 +305,8 @@ onMounted(() => {
         :rules="classRules"
         label-width="80px"
       >
-        <el-form-item label="班级名称" prop="name">
-          <el-input v-model="classForm.name" placeholder="请输入班级名称" />
+        <el-form-item label="班级名称" prop="class_name">
+          <el-input v-model="classForm.class_name" placeholder="请输入班级名称" />
         </el-form-item>
         <el-form-item label="班级描述">
           <el-input

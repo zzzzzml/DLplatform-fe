@@ -11,6 +11,9 @@ const loading = ref(false)
 const experiments = ref([])
 const searchKeyword = ref('')
 const filteredExperiments = ref([])
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
 // 获取实验列表
 const fetchExperiments = async () => {
@@ -20,6 +23,7 @@ const fetchExperiments = async () => {
     if (response.code === 200) {
       experiments.value = response.data || []
       filteredExperiments.value = experiments.value
+      total.value = experiments.value.length
     } else {
       ElMessage.error(response.message || '获取实验列表失败')
     }
@@ -36,6 +40,11 @@ const viewExperiment = (id) => {
   router.push(`/student/experiment-detail/${id}`)
 }
 
+// 上传实验
+const uploadExperiment = (id) => {
+  router.push(`/student/experiment-submit/${id}`)
+}
+
 // 处理搜索
 const handleSearch = () => {
   if (!searchKeyword.value.trim()) {
@@ -45,6 +54,12 @@ const handleSearch = () => {
       exp.experiment_name.toLowerCase().includes(searchKeyword.value.toLowerCase())
     )
   }
+  total.value = filteredExperiments.value.length
+}
+
+// 处理分页
+const handlePageChange = (page) => {
+  currentPage.value = page
 }
 
 // 格式化日期时间
@@ -97,8 +112,29 @@ onMounted(() => {
           {{ formatDateTime(row.deadline) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="150" fixed="right">
+      <el-table-column label="状态" width="100">
         <template #default="{ row }">
+          <el-tag :type="new Date(row.deadline) > new Date() ? 'success' : 'info'">
+            {{ new Date(row.deadline) > new Date() ? '进行中' : '已结束' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="submitted" label="提交状态" width="100">
+        <template #default="{ row }">
+          <el-tag :type="row.submitted ? 'success' : 'warning'">
+            {{ row.submitted ? '已提交' : '未提交' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="200" fixed="right">
+        <template #default="{ row }">
+          <el-button 
+            type="primary" 
+            size="small" 
+            @click="uploadExperiment(row.experiment_id)"
+          >
+            上传
+          </el-button>  
           <el-button
             type="primary"
             size="small"
@@ -110,7 +146,16 @@ onMounted(() => {
       </el-table-column>
     </el-table>
 
-
+    <div class="pagination">
+      <el-pagination
+        background
+        layout="total, prev, pager, next"
+        :total="total"
+        :current-page="currentPage"
+        :page-size="pageSize"
+        @current-change="handlePageChange"
+      />
+    </div>
   </div>
 </template>
 
@@ -135,4 +180,4 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
 }
-</style> 
+</style>

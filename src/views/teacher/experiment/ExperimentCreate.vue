@@ -1,23 +1,30 @@
 <template>
-  <div class="experiment-create">
-    <el-card class="box-card">
-      <template #header>
-        <div class="card-header">
-          <h2>创建实验</h2>
-        </div>
-      </template>
-      <el-form :model="experimentForm" :rules="rules" ref="experimentFormRef" label-width="100px" class="experiment-form">
+  <div class="experiment-create-container">
+    <h1 class="page-title">创建实验</h1>
+    <el-card class="form-card">
+      <el-form 
+        ref="experimentFormRef"
+        :model="experimentForm"
+        :rules="rules"
+        label-width="100px"
+        class="experiment-form"
+      >
         <el-form-item label="实验名称" prop="experiment_name">
           <el-input v-model="experimentForm.experiment_name" placeholder="请输入实验名称"></el-input>
         </el-form-item>
         <el-form-item label="班级" prop="class_id">
-          <el-select v-model="experimentForm.class_id" placeholder="请选择班级" style="width: 100%">
-            <el-option label="1班" value="1"></el-option>
-            <el-option label="2班" value="2"></el-option>
-            <el-option label="3班" value="3"></el-option>
-            <el-option label="4班" value="4"></el-option>
-            <el-option label="5班" value="5"></el-option>
-            <el-option label="6班" value="6"></el-option>
+          <el-select 
+            v-model="experimentForm.class_id" 
+            placeholder="请选择班级" 
+            style="width: 100%"
+            :loading="classesLoading"
+          >
+            <el-option 
+              v-for="item in classes" 
+              :key="item.class_id" 
+              :label="item.class_name" 
+              :value="item.class_id"
+            ></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="截止日期" prop="deadline">
@@ -30,12 +37,20 @@
             value-format="YYYY-MM-DD HH:mm:ss"
           ></el-date-picker>
         </el-form-item>
-        <el-form-item label="实验介绍" prop="description">
+        <el-form-item label="实验描述" prop="description">
           <el-input
             v-model="experimentForm.description"
             type="textarea"
             rows="4"
-            placeholder="请输入实验介绍"
+            placeholder="请输入实验描述"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="实验要求" prop="requirements">
+          <el-input
+            v-model="experimentForm.requirements"
+            type="textarea"
+            rows="4"
+            placeholder="请输入实验要求"
           ></el-input>
         </el-form-item>
         <el-form-item label="实验文件" prop="file">
@@ -62,9 +77,8 @@
           </el-upload>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="submitForm">创建</el-button>
+          <el-button type="primary" @click="submitForm">发布实验</el-button>
           <el-button @click="resetForm">重置</el-button>
-          <el-button @click="goBack">返回</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -72,24 +86,28 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
 import { publishExperimentWithAttachment } from '@/api/experiment'
+import { getClasses } from '@/api/class'
 
 const router = useRouter()
 const userStore = useUserStore()
 const experimentFormRef = ref(null)
 const uploadRef = ref(null)
 const fileList = ref([])
+const classes = ref([])
+const classesLoading = ref(false)
 
 const experimentForm = reactive({
   experiment_name: '',
   class_id: '',
   deadline: '',
   description: '',
+  requirements: '',
   file: null
 })
 
@@ -105,11 +123,32 @@ const rules = {
     { required: true, message: '请选择截止日期', trigger: 'change' }
   ],
   description: [
-    { required: true, message: '请输入实验介绍', trigger: 'blur' }
+    { required: true, message: '请输入实验描述', trigger: 'blur' }
+  ],
+  requirements: [
+    { required: true, message: '请输入实验要求', trigger: 'blur' }
   ],
   file: [
     { required: true, message: '请上传实验文件', trigger: 'change' }
   ]
+}
+
+// 获取班级列表
+const fetchClasses = async () => {
+  classesLoading.value = true
+  try {
+    const response = await getClasses()
+    if (response.code === 200 && response.data) {
+      classes.value = response.data
+    } else {
+      ElMessage.error(response.message || '获取班级列表失败')
+    }
+  } catch (error) {
+    console.error('获取班级列表失败:', error)
+    ElMessage.error('获取班级列表失败')
+  } finally {
+    classesLoading.value = false
+  }
 }
 
 // 文件上传处理
@@ -130,9 +169,8 @@ const handleExceed = () => {
   ElMessage.warning('只能上传一个文件')
 }
 
+// 提交表单
 const submitForm = async () => {
-  if (!experimentFormRef.value) return
-
   // 验证文件是否已上传
   if (!experimentForm.file) {
     ElMessage.error('请上传实验文件')
@@ -149,6 +187,7 @@ const submitForm = async () => {
         formData.append('class_id', experimentForm.class_id)
         formData.append('teacher_id', userStore.userInfo.user_id)
         formData.append('description', experimentForm.description)
+        formData.append('requirements', experimentForm.requirements)
         formData.append('deadline', experimentForm.deadline)
 
         const response = await publishExperimentWithAttachment(formData)
@@ -164,11 +203,13 @@ const submitForm = async () => {
         ElMessage.error('发布实验失败，请重试')
       }
     } else {
+      console.log('表单验证失败')
       return false
     }
   })
 }
 
+// 重置表单
 const resetForm = () => {
   if (experimentFormRef.value) {
     experimentFormRef.value.resetFields()
@@ -177,32 +218,30 @@ const resetForm = () => {
   experimentForm.file = null
 }
 
-const goBack = () => {
-  router.push('/teacher/experiment-manage')
-}
+// 页面加载时获取班级列表
+onMounted(() => {
+  fetchClasses()
+})
 </script>
 
 <style scoped>
-.experiment-create {
+.experiment-create-container {
   padding: 20px;
 }
 
-.box-card {
+.page-title {
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.form-card {
   margin-bottom: 20px;
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .experiment-form {
-  margin-top: 20px;
-}
-
-.mt-4 {
-  margin-top: 1rem;
+  max-width: 800px;
 }
 
 .upload-demo {

@@ -19,15 +19,16 @@ export const useUserStore = defineStore('user', {
   actions: {
     async login(credentials) {
       try {
-        // 本地开发模式：当用户名和密码都是123时直接登录
-        if (credentials.username === '123' && credentials.password === '123') {
+        // 处理测试账号登录
+        if (credentials.username === 'test_student' || credentials.username === 'test_teacher') {
           // 使用前端选择的角色创建模拟用户信息
           const mockUserInfo = {
             user_id: credentials.role === 'student' ? 1 : 2,
             user_type: credentials.role,
             realname: credentials.role === 'student' ? 'jack' : '王老师',
             email: credentials.role === 'student' ? '123@163.com' : 'wang@example.com',
-            username: credentials.username
+            username: credentials.username,
+            profile_completed: true // 测试账号默认已完成资料
           }
 
           // 保存用户信息
@@ -59,7 +60,10 @@ export const useUserStore = defineStore('user', {
             user_type: res.data.user_type,
             realname: res.data.realname,
             email: res.data.email,
-            username: credentials.username
+            username: credentials.username,
+            profile_completed: res.data.profile_completed || false,
+            student_id: res.data.student_id,
+            class_id: res.data.class_id
           }
           this.role = res.data.user_type
           this.token = 'api_token_' + Date.now() // 如果API没有返回token，生成一个
@@ -76,25 +80,33 @@ export const useUserStore = defineStore('user', {
         }
       } catch (error) {
         console.error('Login failed:', error)
+        ElMessage.error(error.message || '登录失败，请检查用户名和密码')
         throw error
       }
     },
 
     async fetchUserInfo() {
       // 如果是测试账号或API登录，直接返回已存储的用户信息
-      if (this.userInfo) {
+      if (this.token && this.token.startsWith('mock_token_')) {
         return this.userInfo
       }
 
       // 如果没有用户信息，尝试从API获取（兼容旧版本）
       try {
-        const userInfo = await getUserInfo()
+        const response = await getUserInfo()
+        
+        // 确保我们正确处理API返回的数据结构
+        const userInfo = response.data || response
+        
         this.userInfo = {
           user_id: userInfo.user_id || userInfo.id,
           user_type: userInfo.user_type || userInfo.role,
-          realname: userInfo.realname || userInfo.name,
+          realname: userInfo.real_name || userInfo.realname || userInfo.name,
           email: userInfo.email,
-          username: userInfo.username
+          username: userInfo.username,
+          profile_completed: userInfo.profile_completed || false,
+          student_id: userInfo.student_id,
+          class_id: userInfo.class_id
         }
         this.role = this.userInfo.user_type
 
@@ -103,8 +115,8 @@ export const useUserStore = defineStore('user', {
 
         return this.userInfo
       } catch (error) {
-        console.error('Failed to fetch user info:', error)
-        throw error
+        console.error('获取用户信息失败:', error)
+        return null
       }
     },
 

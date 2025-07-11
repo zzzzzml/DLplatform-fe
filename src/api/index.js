@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/'
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 
 const instance = axios.create({
   baseURL,
@@ -14,9 +14,17 @@ const instance = axios.create({
 instance.interceptors.request.use(
   config => {
     const token = localStorage.getItem('token')
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    
+    // 同时传递用户ID，兼容后端旧版本
+    if (userInfo && userInfo.user_id) {
+      config.headers['User-ID'] = userInfo.user_id.toString()
+    }
+    
     return config
   },
   error => {

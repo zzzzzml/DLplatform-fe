@@ -89,7 +89,7 @@ onMounted(() => {
   <div class="experiment-detail" v-loading="loading">
     <div v-if="experiment" class="detail-container">
       <div class="page-header">
-        <h2>{{ experiment.experiment_name }}</h2>
+        <h2>{{ experiment.experiment.experiment_name }}</h2>
         <div class="actions">
           <el-dropdown v-if="experiment.attachments && experiment.attachments.length > 0" trigger="click">
             <el-button type="success" :icon="Download">
@@ -124,22 +124,46 @@ onMounted(() => {
         <div class="experiment-info">
           <div class="info-item">
             <span class="label">实验名称：</span>
-            <span class="value">{{ experiment.experiment_name }}</span>
+            <span class="value">{{ experiment.experiment.experiment_name }}</span>
           </div>
           <div class="info-item">
             <span class="label">截止时间：</span>
-            <span class="value">{{ formatDateTime(experiment.deadline) }}</span>
+            <span class="value">{{ formatDateTime(experiment.experiment.deadline) }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">状态：</span>
+            <el-tag :type="new Date(experiment.experiment.deadline) > new Date() ? 'success' : 'info'">
+              {{ new Date(experiment.experiment.deadline) > new Date() ? '进行中' : '已结束' }}
+            </el-tag>
           </div>
         </div>
       </el-card>
 
-      <el-card class="content-card" v-if="experiment.description">
+      <el-card class="content-card" v-if="experiment.experiment.description">
         <template #header>
           <div class="card-header">
             <span>实验内容</span>
           </div>
         </template>
-        <div class="experiment-content">{{ experiment.description }}</div>
+        <div class="experiment-content">{{ experiment.experiment.description }}</div>
+      </el-card>
+
+      <el-card class="content-card" v-if="experiment.attachments && experiment.attachments.length > 0">
+        <template #header>
+          <div class="card-header">
+            <span>实验附件</span>
+          </div>
+        </template>
+        <div class="attachment-list">
+          <div v-for="attachment in experiment.attachments" :key="attachment.attachment_id" class="attachment-item">
+            <el-icon><Document /></el-icon>
+            <div class="attachment-info">
+              <div class="file-name">{{ attachment.file_name }}</div>
+              <div class="file-meta">{{ formatFileSize(attachment.file_size) }} | {{ formatDateTime(attachment.upload_time) }}</div>
+            </div>
+            <el-button type="primary" size="small" @click="downloadFile(attachment)">下载</el-button>
+          </div>
+        </div>
       </el-card>
     </div>
 
@@ -173,8 +197,8 @@ onMounted(() => {
 }
 
 .experiment-info {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 15px;
 }
 
@@ -187,6 +211,7 @@ onMounted(() => {
   font-weight: bold;
   margin-right: 10px;
   color: #606266;
+  min-width: 80px;
 }
 
 .content-card {
@@ -197,61 +222,47 @@ onMounted(() => {
   font-weight: bold;
 }
 
-.experiment-description, 
-.experiment-requirements {
+.experiment-content {
   line-height: 1.6;
+  white-space: pre-wrap;
 }
 
-.attachment-list {
+.actions {
   display: flex;
-  flex-direction: column;
   gap: 10px;
 }
 
 .attachment-item {
   display: flex;
   align-items: center;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 4px;
+  background-color: #f5f7fa;
 }
 
-.attachment-link {
-  margin-left: 10px;
-  color: #409EFF;
-  text-decoration: none;
-}
-
-.attachment-link:hover {
-  text-decoration: underline;
-}
-
-.experiment-content {
-  line-height: 1.8;
-  color: #444;
-  font-size: 15px;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
-/* 下拉菜单中的附件项样式 */
-.el-dropdown-menu .attachment-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 5px 0;
-  min-width: 250px;
-}
-
-.el-dropdown-menu .attachment-info {
+.attachment-info {
   flex: 1;
+  margin-left: 10px;
+  overflow: hidden;
 }
 
-.el-dropdown-menu .file-name {
-  font-weight: 500;
-  color: #333;
-  margin-bottom: 2px;
+.file-name {
+  font-weight: bold;
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.el-dropdown-menu .file-meta {
+.file-meta {
   font-size: 12px;
-  color: #666;
+  color: #909399;
+}
+
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 </style> 

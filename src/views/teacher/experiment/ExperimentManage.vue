@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getExperimentsList, deleteExperiment } from '../../../api/experiment'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -10,7 +10,30 @@ const router = useRouter()
 const loading = ref(false)
 const experiments = ref([])
 const searchKeyword = ref('')
-const filteredExperiments = ref([])
+const currentPage = ref(1)
+const pageSize = ref(10)
+const currentTime = ref(Date.now()) // 当前时间戳，用于动态计算状态
+
+// 每秒更新当前时间，确保状态实时性
+setInterval(() => {
+  currentTime.value = Date.now()
+}, 1000)
+
+// 计算属性：根据搜索关键词过滤数据
+const filteredExperiments = computed(() => {
+  if (!searchKeyword.value.trim()) {
+    return experiments.value
+  } else {
+    return experiments.value.filter(exp =>
+      exp.experiment_name.toLowerCase().includes(searchKeyword.value.toLowerCase())
+    )
+  }
+})
+
+// 计算总条数（用于分页）
+const total = computed(() => {
+  return experiments.value.length
+})
 
 // 获取实验列表
 const fetchExperiments = async () => {
@@ -19,7 +42,6 @@ const fetchExperiments = async () => {
     const response = await getExperimentsList()
     if (response.code === 200) {
       experiments.value = response.data || []
-      filteredExperiments.value = experiments.value
     } else {
       ElMessage.error(response.message || '获取实验列表失败')
     }
@@ -68,20 +90,44 @@ const viewExperiment = (id) => {
 
 // 查看提交列表
 const viewSubmissions = (id) => {
-  router.push({
-    path: '/teacher/evaluation',
-    query: { experimentId: id }
-  })
+  router.push(`/teacher/tscore/${id}`)
+}
+
+// 处理分页变化
+const handlePageChange = (page) => {
+  currentPage.value = page
 }
 
 // 处理搜索
 const handleSearch = () => {
-  if (!searchKeyword.value.trim()) {
-    filteredExperiments.value = experiments.value
+  currentPage.value = 1 // 重置到第一页
+}
+
+// 获取状态文本
+const getStatusText = (row) => {
+  const endTime = new Date(row.deadline).getTime()
+  const startTime = new Date(row.publish_time || Date.now()).getTime()
+  
+  if (currentTime.value > endTime) {
+    return '已结束'
+  } else if (currentTime.value < startTime) {
+    return '未开始'
   } else {
-    filteredExperiments.value = experiments.value.filter(exp =>
-      exp.experiment_name.toLowerCase().includes(searchKeyword.value.toLowerCase())
-    )
+    return '进行中'
+  }
+}
+
+// 获取状态标签类型
+const getStatusType = (row) => {
+  const endTime = new Date(row.deadline).getTime()
+  const startTime = new Date(row.publish_time || Date.now()).getTime()
+  
+  if (currentTime.value > endTime) {
+    return 'info' // 已结束-蓝色
+  } else if (currentTime.value < startTime) {
+    return 'warning' // 未开始-橙色
+  } else {
+    return 'success' // 进行中-绿色
   }
 }
 
@@ -104,26 +150,23 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="experiment-manage">
+  <div class="experiment-manage-container">
     <div class="page-header">
-      <h2>实验管理</h2>
-      <div class="action-box">
-        <div class="search-box">
-          <el-input
-            v-model="searchKeyword"
-            placeholder="搜索实验名称"
-            clearable
-            @keyup.enter="handleSearch"
-          >
-            <template #append>
-              <el-button @click="handleSearch">
-                <el-icon><Search /></el-icon>
-              </el-button>
-            </template>
-          </el-input>
-        </div>
+      <h1 class="page-title">实验管理</h1>
+      <div class="header-actions">
+        <el-input
+          v-model="searchKeyword"
+          placeholder="搜索实验名称"
+          class="search-input"
+          @input="handleSearch"
+          clearable
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
         <el-button type="primary" @click="createExperiment">
-          <el-icon><Plus /></el-icon>新建实验
+          <el-icon><Plus /></el-icon>创建实验
         </el-button>
       </div>
     </div>
@@ -135,6 +178,13 @@ onMounted(() => {
       style="width: 100%"
     >
       <el-table-column prop="experiment_name" label="实验名称" min-width="300" />
+      <el-table-column label="状态" width="100">
+        <template #default="{ row }">
+          <el-tag :type="getStatusType(row)">
+            {{ getStatusText(row) }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column prop="deadline" label="截止时间" width="200">
         <template #default="{ row }">
           {{ formatDateTime(row.deadline) }}
@@ -161,7 +211,7 @@ onMounted(() => {
             size="small"
             @click="viewSubmissions(row.experiment_id)"
           >
-            查看提交
+            查看排名
           </el-button>
           <el-button
             type="danger"
@@ -174,12 +224,21 @@ onMounted(() => {
       </el-table-column>
     </el-table>
 
-
+    <div class="pagination">
+      <el-pagination
+        background
+        layout="total, prev, pager, next"
+        :total="total"
+        :current-page="currentPage"
+        :page-size="pageSize"
+        @current-change="handlePageChange"
+      />
+    </div>
   </div>
 </template>
 
 <style scoped>
-.experiment-manage {
+.experiment-manage-container {
   padding: 20px;
 }
 
@@ -190,13 +249,20 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
-.action-box {
-  display: flex;
-  gap: 15px;
+.page-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
+  color: #303133;
 }
 
-.search-box {
-  width: 300px;
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.search-input {
+  width: 250px;
 }
 
 .pagination {
@@ -204,4 +270,4 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
 }
-</style> 
+</style>

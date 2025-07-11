@@ -25,8 +25,8 @@ const routes = [
         component: () => import('../views/student/Home.vue')
       },
       {
-        path: 'experiment-list',
-        name: 'StudentExperimentList',
+        path: 'experiment-list',   //在这里定义好路由的路径（这个是要调用的路径）
+        name: 'StudentExperimentList',  // 下面名字没什么用
         component: () => import('../views/student/experiment/ExperimentList.vue')
       },
       {
@@ -40,14 +40,20 @@ const routes = [
         component: () => import('../views/student/experiment/ExperimentSubmit.vue')
       },
       {
-        path: 'result',
-        name: 'StudentResult',
+        path: 'result-list',
+        name: 'ResultList',
         component: () => import('../views/student/result/ResultList.vue')
       },
       {
         path: 'profile',
         name: 'StudentProfile',
         component: () => import('../views/student/profile/Profile.vue')
+      },
+      // 添加了一条新的路由地址
+      {
+        path: 'score/:id',
+        name: 'Scoreranking',
+        component: () => import('../views/student/experiment/Experimentscore.vue')  //把要跳转的vue页面路径写到这里
       }
     ]
   },
@@ -102,6 +108,11 @@ const routes = [
         path: 'profile',
         name: 'TeacherProfile',
         component: () => import('../views/teacher/profile/Profile.vue')
+      },
+      {
+        path: 'tscore/:id',
+        name: 'Tscoreranking',
+        component: () => import('../views/teacher/experiment/Experimentscore.vue')
       }
     ]
   }
@@ -118,8 +129,9 @@ router.beforeEach((to, from, next) => {
   // 获取登录状态
   const token = localStorage.getItem('token')
   const role = localStorage.getItem('role')
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
   
-  console.log('当前登录状态:', { token: !!token, role })
+  console.log('当前登录状态:', { token: !!token, role, profile_completed: userInfo.profile_completed })
   
   // 登录和注册页面不需要验证
   if (to.path === '/' || to.path === '/register') {
@@ -146,6 +158,26 @@ router.beforeEach((to, from, next) => {
     if (!token) {
       console.log('未登录，重定向到登录页')
       next('/')
+      return
+    }
+    
+    // 检查学生是否完成个人资料
+    // 只有当不是前往个人资料页面时才进行重定向
+    if (role === 'student' && 
+        userInfo && 
+        userInfo.profile_completed === false && 
+        to.path !== '/student/profile' && 
+        !to.path.includes('/profile')) {
+      console.log('学生未完成个人资料，强制跳转到个人资料页面')
+      // 使用replace而不是push，这样用户不能通过浏览器的后退按钮绕过资料填写
+      next({ 
+        path: '/student/profile', 
+        replace: true,
+        query: { 
+          redirect: to.fullPath,
+          first_login: 'true'
+        }
+      })
       return
     }
     

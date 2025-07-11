@@ -39,21 +39,18 @@ const handleLogin = async () => {
     if (valid) {
       try {
         loading.value = true
-        const result = await userStore.login(loginForm)
+        const response = await userStore.login(loginForm)
         console.log('登录成功，角色:', userStore.role, '跳转页面中...')
 
         ElMessage.success('登录成功！')
 
-        // 使用原来的路由，忽略后端返回的redirect_url
-        setTimeout(() => {
-          if (userStore.isTeacher) {
-            console.log('跳转到教师首页')
-            router.push('/teacher/home')
-          } else {
-            console.log('跳转到学生首页')
-            router.push('/student/home')
-          }
-        }, 100)
+        // 登录成功后的处理
+        if (response.data && response.data.redirect_url) {
+          // 使用原来的路由，忽略后端返回的redirect_url
+          router.push(userStore.role === 'student' ? '/student/home' : '/teacher/home')
+        } else {
+          router.push('/')
+        }
       } catch (error) {
         console.error('Login failed:', error)
         ElMessage.error('登录失败，请检查用户名和密码')

@@ -1,6 +1,6 @@
 import request from './index'
 
-// 登录
+// 用户登录
 export function login(data) {
   return request({
     url: '/login',
@@ -9,7 +9,7 @@ export function login(data) {
   })
 }
 
-// 注册
+// 用户注册
 export function register(data) {
   return request({
     url: '/register',
@@ -42,12 +42,12 @@ export const updateUserProfile = updateUserInfo
 export function updateUserPassword(data) {
   return request({
     url: '/auth/change-password',
-    method: 'put',
+    method: 'post',
     data
   })
 }
 
-// 登出
+// 用户登出
 export function logout() {
   return request({
     url: '/auth/logout',

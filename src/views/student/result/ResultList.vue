@@ -33,7 +33,7 @@ const fetchResults = async () => {
   try {
     const res = await getStudentResults({
       page: currentPage.value,
-      limit: pageSize.value
+      pageSize: pageSize.value
     })
     results.value = res.data
     total.value = res.total
