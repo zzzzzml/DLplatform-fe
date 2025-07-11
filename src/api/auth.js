@@ -42,3 +42,11 @@ export function logout() {
     method: 'post'
   })
 } 
+// 修改密码
+export function updateUserPassword(data) {
+  return request({
+    url: '/auth/change-password',
+    method: 'post',
+    data
+  })
+}
