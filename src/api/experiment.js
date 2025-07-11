@@ -55,15 +55,6 @@ export function getStudentExperiments(params) {
   })
 }
 
-// 获取某实验下所有学生成绩（POST）
-export function getStudentExperimentScore(experimentId) {
-  return request({
-    url: '/student/experiment/score',
-    method: 'post',
-    data: { experiment_id: experimentId }
-  })
-}
-
 // 提交实验
 export function submitExperiment(id, data) {
   return request({
@@ -134,4 +125,28 @@ export function evaluateSubmissionTeacher(id, data) {
     method: 'post',
     data
   })
+}
+
+// 学生端获取实验排名
+export function getExperimentRanking(experimentId, studentId) {
+  const data = { experiment_id: experimentId };
+  if (studentId !== undefined) {
+    data.student_id = studentId;
+  }
+  return request({
+    url: '/student/experiment/scores',
+    method: 'post',
+    data
+  })
 } 
+
+// 教师端获取实验排名
+export function getTeacherExperimentRanking(experimentId) {
+  return request({
+    url: '/teacher/experiment/scores',
+    method: 'post',
+    data: {
+      experiment_id: experimentId
+    }
+  })
+}

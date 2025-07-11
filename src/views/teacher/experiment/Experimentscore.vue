@@ -22,7 +22,7 @@
     <div class="header-info" v-if="!searchKeyword.trim()">
       <div class="info-card">
         <h3>实验名称</h3>
-        <div class="value">Vue3组件化开发实战</div>
+        <div class="value">{{ experimentName }}</div>
       </div>
       <div class="info-card">
         <h3>参与人数</h3>
@@ -30,7 +30,7 @@
       </div>
       <div class="info-card">
         <h3>平均分数</h3>
-        <div class="value">{{ averageScore.toFixed(1) }}分</div>
+        <div class="value">{{ formatScore(averageScore) }}分</div>
       </div>
       <div class="info-card">
         <h3>最高分数</h3>
@@ -101,36 +101,56 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { useRoute } from 'vue-router'
+import { getTeacherExperimentRanking } from '@/api/experiment'
 
-// 状态管理
+const route = useRoute()
 const loading = ref(false)
 const searchKeyword = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
 
-// 学生数据
-const allStudents = ref([
-  { id: 1, name: '王芳', className: '人工智能3班', score: 98 },
-  { id: 2, name: '张明', className: '计算机科学与技术1班', score: 96 },
-  { id: 3, name: '陈晓', className: '计算机科学与技术1班', score: 95 },
-  { id: 4, name: '李华', className: '软件工程2班', score: 92 },
-  { id: 5, name: '赵静', className: '网络工程2班', score: 90 },
-  { id: 6, name: '刘伟', className: '数据科学1班', score: 88 },
-  { id: 7, name: '周涛', className: '人工智能1班', score: 87 },
-  { id: 8, name: '徐丽', className: '数据科学2班', score: 85 },
-  { id: 9, name: '杨帆', className: '软件工程3班', score: 83 },
-  { id: 10, name: '孙浩', className: '网络工程1班', score: 92 },
-  { id: 11, name: '马超', className: '计算机科学与技术2班', score: 81 },
-  { id: 12, name: '刘晓', className: '软件工程1班', score: 79 },
-  { id: 13, name: '赵敏', className: '人工智能3班', score: 95 },
-  { id: 14, name: '钱明', className: '网络工程2班', score: 88 },
-])
+// 动态数据
+const experimentName = ref('')
+const allStudents = ref([])
+
+// 获取实验ID
+const experimentId = computed(() => route.params.id || route.query.experimentId)
+
+// 获取实验排名数据
+const fetchRanking = async () => {
+  if (!experimentId.value) {
+    ElMessage.error('缺少实验ID')
+    return
+  }
+  loading.value = true
+  try {
+    const res = await getTeacherExperimentRanking(experimentId.value)
+    if (res && res.code === 200 && res.data) {
+      experimentName.value = res.data.experiment_name || ''
+      // 数据清洗：确保分数为有效数字
+      allStudents.value = (res.data.students || []).map(student => ({
+        ...student,
+        score: Number(student.score) || 0 // 无效分数默认设为0
+      }))
+    } else {
+      ElMessage.error(res?.message || '获取数据失败')
+      allStudents.value = []
+    }
+  } catch (e) {
+    ElMessage.error('获取实验排名失败')
+    allStudents.value = []
+  } finally {
+    loading.value = false
+  }
+}
 
 // 计算排名
 const rankedStudents = computed(() => {
+  // 复制并排序数组（按分数降序）
   const sorted = [...allStudents.value].sort((a, b) => b.score - a.score)
   
   let currentRank = 1
@@ -154,14 +174,37 @@ const rankedStudents = computed(() => {
   })
 })
 
-// 计算统计数据
+// 计算统计数据 - 修复平均分计算问题
 const averageScore = computed(() => {
-  const total = allStudents.value.reduce((sum, student) => sum + student.score, 0)
+  // 处理空数组情况
+  if (allStudents.value.length === 0) {
+    return 0
+  }
+  
+  // 计算总分（只包含有效分数）
+  const total = allStudents.value.reduce((sum, student) => {
+    // 确保分数是数字
+    const score = Number(student.score)
+    return sum + (isNaN(score) ? 0 : score)
+  }, 0)
+  
+  // 计算平均分
   return total / allStudents.value.length
 })
 
+// 计算最高分（优化版）
 const maxScore = computed(() => {
-  return Math.max(...allStudents.value.map(student => student.score))
+  if (allStudents.value.length === 0) {
+    return 0
+  }
+  
+  // 提取所有有效分数
+  const validScores = allStudents.value.map(student => {
+    const score = Number(student.score)
+    return isNaN(score) ? 0 : score
+  })
+  
+  return Math.max(...validScores)
 })
 
 // 搜索过滤
@@ -219,9 +262,24 @@ const highlightKeyword = (text) => {
     '<span class="highlight">$1</span>'
   )
 }
+
+// 格式化分数显示（处理NaN和保留一位小数）
+const formatScore = (score) => {
+  // 处理NaN情况
+  if (isNaN(score)) {
+    return '0.0'
+  }
+  // 保留一位小数
+  return score.toFixed(1)
+}
+
+onMounted(() => {
+  fetchRanking()
+})
 </script>
 
 <style scoped>
+/* 样式部分保持不变 */
 .score-rank-container {
   padding: 20px;
 }
@@ -345,7 +403,7 @@ const highlightKeyword = (text) => {
     margin-bottom: 15px;
   }
   
-  .search-box {
+  .page-header .search-box {
     width: 100%;
     margin-top: 15px;
   }

@@ -272,10 +272,7 @@ const handleDelete = async (id) => {
 
 // 查看提交列表
 const viewSubmissions = (id) => {
-  router.push({
-    path: '/teacher/tscore',
-    query: { experimentId: id }
-  })
+  router.push(`/teacher/tscore/${id}`)
 }
 
 // 处理分页变化

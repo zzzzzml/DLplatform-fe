@@ -209,7 +209,7 @@ const uploadExperiment = (id) => {
 
 // 查看实验详情
 const viewExperiment = (id) => {
-  router.push(`/student/score`)
+  router.push(`/student/score/${id}`)
 }
 
 // 处理分页变化

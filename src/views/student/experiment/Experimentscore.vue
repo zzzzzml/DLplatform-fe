@@ -105,33 +105,27 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { Search } from '@element-plus/icons-vue'
+import { getExperimentRanking } from '@/api/experiment'
+import { useUserStore } from '@/stores/user'
+import { useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
+
+// 获取路由参数和用户信息
+const route = useRoute()
+const userStore = useUserStore()
 
 // 状态定义
 const loading = ref(true)
 const searchKeyword = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
-const myId = 10 // 我的ID（孙浩）
+const students = ref([]) // 改为空数组，通过API获取数据
 
-// 初始学生数据（15条，新增5条）
-const students = ref([
-  { id: 1, name: '张明', className: '计算机科学与技术1班', score: 93 },
-  { id: 2, name: '李华', className: '软件工程2班', score: 89 },
-  { id: 3, name: '王芳', className: '人工智能3班', score: 93 },
-  { id: 4, name: '刘伟', className: '数据科学1班', score: 85 },
-  { id: 5, name: '赵静', className: '网络工程2班', score: 93 },
-  { id: 6, name: '陈晓', className: '计算机科学与技术1班', score: 91 },
-  { id: 7, name: '杨帆', className: '软件工程3班', score: 87 },
-  { id: 8, name: '周涛', className: '人工智能1班', score: 88 },
-  { id: 9, name: '徐丽', className: '数据科学2班', score: 90 },
-  { id: 10, name: '孙浩', className: '网络工程1班', score: 92 }, // 与我的ID匹配
-  // 新增5条数据
-  { id: 11, name: '马超', className: '计算机科学与技术2班', score: 86 },
-  { id: 12, name: '林小雨', className: '人工智能2班', score: 94 }, // 新增高分数据
-  { id: 13, name: '郑阳', className: '软件工程1班', score: 83 },
-  { id: 14, name: '吴佳', className: '数据科学3班', score: 90 },
-  { id: 15, name: '孙婷婷', className: '网络工程3班', score: 88 } // 与"孙浩"同姓，可测试搜索
-])
+// 获取实验ID（从路由参数中获取）
+const experimentId = computed(() => route.params.id || route.query.experimentId)
+
+// 获取当前登录用户ID
+const currentUserId = computed(() => 11)
 
 // 高亮搜索关键词
 const highlightKeyword = (text) => {
@@ -179,7 +173,7 @@ const filteredRankings = computed(() => {
 
 // 从搜索结果中获取我的数据（核心逻辑）
 const mySearchData = computed(() => {
-  return filteredRankings.value.find(item => item.id === myId) || null
+  return filteredRankings.value.find(item => item.id === currentUserId.value) || null
 })
 
 // 分页处理
@@ -209,11 +203,75 @@ const rowClassName = () => {
   return 'my-data-row'
 }
 
-// 页面加载
-onMounted(() => {
-  setTimeout(() => {
+// 获取实验排名数据
+const fetchExperimentRanking = async () => {
+  if (!experimentId.value) {
+    ElMessage.error('缺少实验ID')
+    console.log('实验ID:', experimentId.value)
+    return
+  }
+
+  console.log('开始获取实验排名，实验ID:', experimentId.value)
+  console.log('当前用户ID:', currentUserId.value)
+
+  try {
+    loading.value = true
+    console.log('调用API:', `/student/experiment/scores`, { experiment_id: experimentId.value })
+    
+    const response = await getExperimentRanking(experimentId.value, currentUserId.value)
+    console.log('API响应:', response)
+    
+    if (response && response.code === 200 && response.data) {
+      students.value = response.data
+      console.log('成功获取数据，学生数量:', students.value.length)
+    } else {
+      console.error('API返回错误:', response)
+      ElMessage.error(response?.message || '获取数据失败')
+      students.value = []
+    }
+  } catch (error) {
+    console.error('获取实验排名失败:', error)
+    console.error('错误详情:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data
+    })
+    ElMessage.error('获取实验排名失败')
+    // 如果API调用失败，可以回退到测试数据
+    students.value = [
+      { id: 1, name: '张明', className: '计算机科学与技术1班', score: 93 },
+      { id: 2, name: '李华', className: '软件工程2班', score: 89 },
+      { id: 3, name: '王芳', className: '人工智能3班', score: 93 },
+      { id: 4, name: '刘伟', className: '数据科学1班', score: 85 },
+      { id: 5, name: '赵静', className: '网络工程2班', score: 93 },
+      { id: 6, name: '陈晓', className: '计算机科学与技术1班', score: 91 },
+      { id: 7, name: '杨帆', className: '软件工程3班', score: 87 },
+      { id: 8, name: '周涛', className: '人工智能1班', score: 88 },
+      { id: 9, name: '徐丽', className: '数据科学2班', score: 90 },
+      { id: 10, name: '孙浩', className: '网络工程1班', score: 92 },
+      { id: 11, name: '马超', className: '计算机科学与技术2班', score: 86 },
+      { id: 12, name: '林小雨', className: '人工智能2班', score: 94 },
+      { id: 13, name: '郑阳', className: '软件工程1班', score: 83 },
+      { id: 14, name: '吴佳', className: '数据科学3班', score: 90 },
+      { id: 15, name: '孙婷婷', className: '网络工程3班', score: 88 }
+    ]
+  } finally {
     loading.value = false
-  }, 800)
+  }
+}
+
+// 页面加载
+onMounted(async () => {
+  console.log('=== 页面加载调试信息 ===')
+  console.log('路由参数:', route.params)
+  console.log('路由查询:', route.query)
+  console.log('完整路由对象:', route)
+  console.log('用户信息:', userStore.userInfo)
+  console.log('用户ID:', currentUserId.value)
+  console.log('实验ID:', experimentId.value)
+  console.log('=======================')
+  await fetchExperimentRanking()
 })
 </script>
 

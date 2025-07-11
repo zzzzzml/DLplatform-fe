@@ -51,7 +51,7 @@ const routes = [
       },
       // 添加了一条新的路由地址
       {
-        path: 'score',
+        path: 'score/:id',
         name: 'Scoreranking',
         component: () => import('../views/student/experiment/Experimentscore.vue')  //把要跳转的vue页面路径写到这里
       }, 
@@ -106,7 +106,7 @@ const routes = [
       }
       ,
       {
-        path: 'tscore',
+        path: 'tscore/:id',
         name: 'Tscoreranking',
         component: () => import('../views/teacher/experiment/Experimentscore.vue')
       }
