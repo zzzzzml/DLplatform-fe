@@ -41,4 +41,22 @@ export function logout() {
     url: '/auth/logout',
     method: 'post'
   })
+}
+
+// 更新用户资料
+export function updateUserProfile(data) {
+  return request({
+    url: '/auth/profile',
+    method: 'put',
+    data
+  })
+}
+
+// 更新用户密码
+export function updateUserPassword(data) {
+  return request({
+    url: '/auth/password',
+    method: 'put',
+    data
+  })
 } 

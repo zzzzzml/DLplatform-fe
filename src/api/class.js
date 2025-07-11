@@ -109,4 +109,7 @@ export function deleteCourse(id) {
     url: `/courses/${id}`,
     method: 'delete'
   })
-} 
+}
+
+// 获取班级列表（兼容性导出）
+export const getClassList = getClasses 

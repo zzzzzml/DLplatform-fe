@@ -32,7 +32,7 @@
         </div>
       </template>
       <div class="evaluation-table">
-        <el-button type="primary" @click="downloadAndEvaluateAll" style="margin-bottom: 10px;">
+        <el-button type="primary" @click="handleDownloadAndEvaluateAll" style="margin-bottom: 10px;">
           一键下载+评测所有
         </el-button>
         <el-table
@@ -112,7 +112,7 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getTeacherExperiments, getEvaluations } from '@/api/experiment'
+import { getTeacherExperiments, getEvaluations, downloadAndEvaluateAll } from '@/api/experiment'
 import { getClasses } from '@/api/class'
 
 const router = useRouter()
@@ -198,7 +198,7 @@ const handleAutoEvaluate = async (row) => {
   if (row._evaluating || row.status === 3) return
   row._evaluating = true
   try {
-    const res = await fetch(`/test?experiment_id=${filter.experimentId}`, {
+    const res = await fetch(`/test?experimentId=${filter.experimentId}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     }).then(r => r.json())
@@ -216,18 +216,14 @@ const handleAutoEvaluate = async (row) => {
 }
 
 // 一键下载并评测所有
-const downloadAndEvaluateAll = async () => {
+const handleDownloadAndEvaluateAll = async () => {
   if (!filter.experimentId) {
     ElMessage.warning('请选择实验')
     return
   }
   try {
     loading.value = true
-    // 先请求后端一键下载+评测接口，假设接口为 /test?experiment_id=xxx
-    const res = await fetch(`/test?experiment_id=${filter.experimentId}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
-    }).then(r => r.json())
+    const res = await downloadAndEvaluateAll(filter.experimentId)
     if (res.code === 200 && res.download_url) {
       // 下载文件
       window.open(res.download_url, '_blank')

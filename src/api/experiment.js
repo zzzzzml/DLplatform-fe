@@ -125,4 +125,22 @@ export function evaluateSubmissionTeacher(id, data) {
     method: 'post',
     data
   })
+}
+
+// 获取实验结果列表
+export function getResultList(params) {
+  return request({
+    url: '/results',
+    method: 'get',
+    params
+  })
+}
+
+// 一键下载+评测所有提交
+export function downloadAndEvaluateAll(experimentId) {
+  return request({
+    url: '/test',
+    method: 'get',
+    params: { experimentId }
+  })
 } 
