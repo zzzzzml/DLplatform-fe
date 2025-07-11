@@ -121,11 +121,11 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const students = ref([]) // 改为空数组，通过API获取数据
 
-// 获取实验ID（从路由参数中获取）
+// 获取实验ID
 const experimentId = computed(() => route.params.id || route.query.experimentId)
 
 // 获取当前登录用户ID
-const currentUserId = computed(() => 11)
+const currentUserId = computed(() => userStore.userInfo?.id || 11)
 
 // 高亮搜索关键词
 const highlightKeyword = (text) => {
@@ -218,7 +218,8 @@ const fetchExperimentRanking = async () => {
     loading.value = true
     console.log('调用API:', `/student/experiment/scores`, { experiment_id: experimentId.value })
     
-    const response = await getExperimentRanking(experimentId.value, currentUserId.value)
+    // 修正：移除currentUserId参数，获取完整的实验排名数据
+    const response = await getExperimentRanking(experimentId.value)
     console.log('API响应:', response)
     
     if (response && response.code === 200 && response.data) {
