@@ -17,6 +17,26 @@ export function getExperimentsList() {
   })
 }
 
+// 获取实验详情（新接口）
+export function getExperimentDetail(experimentId) {
+  return request({
+    url: '/student/experiment/requirements',
+    method: 'get',
+    params: {
+      experiment_id: experimentId
+    }
+  })
+}
+
+// 下载附件
+export function downloadAttachment(attachmentId) {
+  return request({
+    url: `/download/attachment/${attachmentId}`,
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+
 // 兼容性导出（确保两个名称都可用）
 export const getExperimentList = getExperiments
 

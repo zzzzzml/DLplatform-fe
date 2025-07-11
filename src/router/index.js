@@ -79,6 +79,11 @@ const routes = [
         component: () => import('../views/teacher/experiment/ExperimentEdit.vue')
       },
       {
+        path: 'experiment-detail/:id',
+        name: 'TeacherExperimentDetail',
+        component: () => import('../views/teacher/experiment/ExperimentDetail.vue')
+      },
+      {
         path: 'evaluation',
         name: 'EvaluationManage',
         component: () => import('../views/teacher/evaluation/EvaluationManage.vue')

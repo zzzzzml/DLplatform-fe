@@ -61,6 +61,11 @@ const handleDelete = async (id) => {
   }
 }
 
+// 查看实验详情
+const viewExperiment = (id) => {
+  router.push(`/teacher/experiment-detail/${id}`)
+}
+
 // 查看提交列表
 const viewSubmissions = (id) => {
   router.push({
@@ -135,8 +140,15 @@ onMounted(() => {
           {{ formatDateTime(row.deadline) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="250" fixed="right">
+      <el-table-column label="操作" width="320" fixed="right">
         <template #default="{ row }">
+          <el-button
+            type="success"
+            size="small"
+            @click="viewExperiment(row.experiment_id)"
+          >
+            查看详情
+          </el-button>
           <el-button
             type="primary"
             size="small"
