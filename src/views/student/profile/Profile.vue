@@ -31,10 +31,6 @@ const passwordForm = reactive({
   confirmPassword: ''
 })
 
-// 头像URL计算属性
-const avatarUrl = computed(() => {
-  return userForm.avatar || 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
-})
 
 // 表单验证规则
 const rules = {
@@ -45,9 +41,6 @@ const rules = {
   email: [
     { required: true, message: '请输入邮箱地址', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
-  ],
-  phone: [
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
   ],
   studentId: [
     { required: true, message: '请输入学号', trigger: 'blur' },
@@ -88,10 +81,8 @@ const loadUserInfo = () => {
     if (userInfo) {
       userForm.name = userInfo.name || ''
       userForm.email = userInfo.email || ''
-      userForm.phone = userInfo.phone || ''
       userForm.studentId = userInfo.studentId || ''
       userForm.className = userInfo.className || ''
-      userForm.avatar = userInfo.avatar || ''
     }
   } catch (error) {
     console.error('加载用户信息失败:', error)
@@ -129,8 +120,6 @@ const saveUserInfo = async () => {
           email: userForm.email,
           student_id: userForm.studentId,
           class_id: userForm.className,
-          phone: userForm.phone,
-          avatar: userForm.avatar
         }
         const res = await updateUserInfo(data)
         if (res.code === 200) {
@@ -195,40 +184,6 @@ const resetPasswordForm = () => {
   }
 }
 
-// 处理头像上传前的验证
-const beforeAvatarUpload = (file) => {
-  const isJPG = file.type === 'image/jpeg' || file.type === 'image/png'
-  const isLt2M = file.size / 1024 / 1024 < 2
-
-  if (!isJPG) {
-    ElMessage.error('上传头像图片只能是 JPG/PNG 格式!')
-    return false
-  }
-  if (!isLt2M) {
-    ElMessage.error('上传头像图片大小不能超过 2MB!')
-    return false
-  }
-  uploadLoading.value = true
-  return true
-}
-
-// 处理头像上传成功
-const handleAvatarSuccess = (response) => {
-  uploadLoading.value = false
-  if (response.code === 200) {
-    userForm.avatar = response.data.url
-    ElMessage.success('头像上传成功')
-  } else {
-    ElMessage.error(response.message || '头像上传失败')
-  }
-}
-
-// 处理头像上传失败
-const handleAvatarError = () => {
-  uploadLoading.value = false
-  ElMessage.error('头像上传失败，请重试')
-}
-
 onMounted(() => {
   loadUserInfo()
 })
@@ -245,24 +200,6 @@ onMounted(() => {
         <el-tab-pane label="个人信息" name="profile">
           <div class="profile-content">
             <el-row :gutter="20">
-              <el-col :span="6">
-                <div class="avatar-container">
-                  <el-avatar :size="150" :src="avatarUrl" />
-                  <el-upload
-                    v-if="isEditing"
-                    class="avatar-uploader"
-                    action="/api/upload"
-                    :show-file-list="false"
-                    :before-upload="beforeAvatarUpload"
-                    :on-success="handleAvatarSuccess"
-                    :on-error="handleAvatarError"
-                  >
-                    <el-button size="small" type="primary" :loading="uploadLoading">
-                      {{ uploadLoading ? '上传中...' : '更换头像' }}
-                    </el-button>
-                  </el-upload>
-                </div>
-              </el-col>
               <el-col :span="18">
                 <div class="profile-actions">
                   <el-button 
@@ -292,7 +229,6 @@ onMounted(() => {
                   <el-descriptions-item label="学号">{{ userForm.studentId }}</el-descriptions-item>
                   <el-descriptions-item label="班级">{{ userForm.className }}</el-descriptions-item>
                   <el-descriptions-item label="邮箱">{{ userForm.email }}</el-descriptions-item>
-                  <el-descriptions-item label="手机">{{ userForm.phone || '未设置' }}</el-descriptions-item>
                 </el-descriptions>
 
                 <!-- 编辑模式 -->
@@ -315,9 +251,6 @@ onMounted(() => {
                   </el-form-item>
                   <el-form-item label="邮箱" prop="email">
                     <el-input v-model="userForm.email" placeholder="请输入邮箱" />
-                  </el-form-item>
-                  <el-form-item label="手机" prop="phone">
-                    <el-input v-model="userForm.phone" placeholder="请输入手机号" />
                   </el-form-item>
                 </el-form>
               </el-col>
