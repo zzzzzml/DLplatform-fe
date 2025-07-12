@@ -1,9 +1,9 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { getExperimentsList, deleteExperiment } from '../../../api/experiment'
+import { getExperimentsList, deleteExperiment, uploadTestData } from '../../../api/experiment'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
-import { Search, Plus } from '@element-plus/icons-vue'
+import { Search, Plus, Upload } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -13,6 +13,7 @@ const searchKeyword = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
 const currentTime = ref(Date.now()) // 当前时间戳，用于动态计算状态
+const uploadLoading = ref(false)
 
 // 每秒更新当前时间，确保状态实时性
 setInterval(() => {
@@ -134,6 +135,64 @@ const viewSubmissions = (id) => {
   router.push(`/teacher/score/${id}`);
 }
 
+// 上传测试数据
+const handleUploadTestData = async (id, experimentName) => {
+  try {
+    // 创建文件选择输入框
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.zip'
+    
+    // 监听文件选择事件
+    input.onchange = async (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+      
+      // 检查文件类型
+      if (!file.name.toLowerCase().endsWith('.zip')) {
+        ElMessage.error('请上传ZIP格式的测试数据文件')
+        return
+      }
+      
+      // 显示上传中状态
+      uploadLoading.value = true
+      const loadingInstance = ElLoading.service({
+        lock: true,
+        text: '正在上传测试数据...',
+        background: 'rgba(0, 0, 0, 0.7)'
+      })
+      
+      try {
+        // 创建表单数据
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('experiment_id', id)
+        
+        // 调用上传API
+        const response = await uploadTestData(formData)
+        
+        if (response && response.code === 200) {
+          ElMessage.success(`实验"${experimentName}"的测试数据上传成功`)
+        } else {
+          ElMessage.error(response?.message || '测试数据上传失败')
+        }
+      } catch (error) {
+        console.error('上传测试数据失败:', error)
+        ElMessage.error('测试数据上传失败: ' + (error.message || '未知错误'))
+      } finally {
+        uploadLoading.value = false
+        loadingInstance.close()
+      }
+    }
+    
+    // 触发文件选择
+    input.click()
+  } catch (error) {
+    console.error('上传测试数据错误:', error)
+    ElMessage.error('上传测试数据失败: ' + (error.message || '未知错误'))
+  }
+}
+
 // 处理分页变化
 const handlePageChange = (page) => {
   currentPage.value = page
@@ -233,34 +292,44 @@ onMounted(() => {
       </el-table-column>
       <el-table-column label="操作" width="320" fixed="right">
         <template #default="{ row }">
-          <el-button
-            type="success"
-            size="small"
-            @click="viewExperiment(row.experiment_id)"
-          >
-            查看详情
-          </el-button>
-          <el-button
-            type="primary"
-            size="small"
-            @click="editExperiment(row.experiment_id)"
-          >
-            编辑
-          </el-button>
-          <el-button
-            type="info"
-            size="small"
-            @click="viewSubmissions(row.experiment_id)"
-          >
-            查看排名
-          </el-button>
-          <el-button
-            type="danger"
-            size="small"
-            @click="handleDelete(row.experiment_id)"
-          >
-            删除
-          </el-button>
+          <div class="operation-buttons">
+            <el-button
+              type="success"
+              size="small"
+              @click="viewExperiment(row.experiment_id)"
+            >
+              查看详情
+            </el-button>
+            <el-button
+              type="primary"
+              size="small"
+              @click="editExperiment(row.experiment_id)"
+            >
+              编辑
+            </el-button>
+            <el-button
+              type="info"
+              size="small"
+              @click="viewSubmissions(row.experiment_id)"
+            >
+              查看排名
+            </el-button>
+            <el-button
+              type="warning"
+              size="small"
+              @click="handleUploadTestData(row.experiment_id, row.experiment_name)"
+              :loading="uploadLoading"
+            >
+              上传测试
+            </el-button>
+            <el-button
+              type="danger"
+              size="small"
+              @click="handleDelete(row.experiment_id)"
+            >
+              删除
+            </el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -308,6 +377,18 @@ onMounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+.operation-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: space-around;
+}
+
+.operation-buttons .el-button {
+  margin: 0;
+  flex: 0 0 auto;
 }
 
 /* 删除确认对话框样式 */

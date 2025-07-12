@@ -321,6 +321,36 @@ export function evaluateAll(experimentId) {
   })
 }
 
+// 一键查重
+export function checkPlagiarism(experimentId) {
+  if (!experimentId) {
+    console.error('checkPlagiarism: 缺少experimentId参数')
+    return Promise.reject(new Error('缺少实验ID参数'))
+  }
+  
+  // 确保experimentId是数字类型
+  const numericExperimentId = parseInt(experimentId)
+  if (isNaN(numericExperimentId)) {
+    console.error(`checkPlagiarism: experimentId不是有效的数字: ${experimentId}`)
+    return Promise.reject(new Error(`实验ID不是有效的数字`))
+  }
+  
+  console.log(`开始一键查重，实验ID: ${numericExperimentId}`)
+  
+  return request({
+    url: '/teacher/experiment/check-plagiarism',
+    method: 'post',
+    data: { experiment_id: numericExperimentId },
+    timeout: 60000 // 增加超时时间到60秒，因为查重可能需要较长时间
+  }).then(response => {
+    console.log('一键查重响应:', response)
+    return response
+  }).catch(error => {
+    console.error('一键查重错误:', error)
+    return Promise.reject(error)
+  })
+}
+
 // 获取教师首页统计数据
 export function getTeacherDashboardStats() {
   return request({
@@ -334,5 +364,17 @@ export function getStudentDashboardStats() {
   return request({
     url: '/student/dashboard/stats',
     method: 'get'
+  })
+}
+
+// 上传测试数据
+export function uploadTestData(formData) {
+  return request({
+    url: '/teacher/experiment/upload-testdata',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   })
 }

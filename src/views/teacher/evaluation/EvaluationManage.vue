@@ -35,6 +35,9 @@
         <el-button type="primary" @click="handleEvaluateAll" style="margin-bottom: 10px;">
           一键评测
         </el-button>
+        <el-button type="primary" @click="handleCheckPlagiarism" style="margin-bottom: 10px;">
+          一键查重
+        </el-button>
         <el-table
           v-loading="loading"
           :data="evaluationList"
@@ -117,6 +120,65 @@
         </div>
       </div>
     </el-card>
+    
+    <!-- 查重结果对话框 -->
+    <el-dialog
+      v-model="plagiarismDialogVisible"
+      title="查重结果"
+      width="80%"
+      destroy-on-close
+    >
+      <div v-loading="plagiarismLoading">
+        <el-alert
+          type="warning"
+          title="查重说明"
+          description="查重结果显示了每个学生提交的pth文件与其他学生提交的pth文件之间的最高相似度。相似度越高，可能抄袭的可能性越大。"
+          show-icon
+          :closable="false"
+          style="margin-bottom: 20px;"
+        />
+        
+        <el-table
+          :data="plagiarismResults"
+          border
+          style="width: 100%"
+          :default-sort="{ prop: 'highest_similarity', order: 'descending' }"
+        >
+          <el-table-column prop="student_name" label="学生姓名" min-width="120" />
+          <el-table-column prop="student_id" label="学生ID" min-width="100" />
+          <el-table-column prop="highest_similarity" label="最高相似度" min-width="120" sortable>
+            <template #default="{ row }">
+              <el-progress
+                :percentage="row.highest_similarity"
+                :color="getSimilarityColor(row.highest_similarity)"
+                :format="() => `${row.highest_similarity}%`"
+                :stroke-width="18"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column label="相似学生" min-width="120">
+            <template #default="{ row }">
+              {{ row.similar_with_name || '无' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="风险评估" min-width="120">
+            <template #default="{ row }">
+              <el-tag :type="getSimilarityTagType(row.highest_similarity)">
+                {{ getSimilarityLevel(row.highest_similarity) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="plagiarismDialogVisible = false">关闭</el-button>
+          <el-button type="primary" @click="exportPlagiarismResults">
+            导出结果
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -124,7 +186,7 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElLoading } from 'element-plus'
-import { getTeacherExperiments, getEvaluations, evaluateAll } from '@/api/experiment'
+import { getTeacherExperiments, getEvaluations, evaluateAll, checkPlagiarism } from '@/api/experiment'
 import { getClasses } from '@/api/class'
 
 const router = useRouter()
@@ -132,6 +194,11 @@ const loading = ref(false)
 const experiments = ref([])
 const classes = ref([])
 const evaluationList = ref([])
+
+// 查重结果相关
+const plagiarismDialogVisible = ref(false)
+const plagiarismResults = ref([])
+const plagiarismLoading = ref(false)
 
 const filter = reactive({
   experimentId: '',
@@ -453,6 +520,82 @@ const handleEvaluateAll = async () => {
   }
 }
 
+// 一键查重
+const handleCheckPlagiarism = async () => {
+  if (!filter.experimentId) {
+    ElMessage.warning('请先选择一个实验进行查重')
+    return
+  }
+  try {
+    plagiarismLoading.value = true
+    loading.value = true
+    ElMessage.info('正在进行一键查重，请稍候...')
+    
+    console.log(`开始一键查重，实验ID: ${filter.experimentId}`)
+    const res = await checkPlagiarism(filter.experimentId)
+    
+    if (res.code === 200) {
+      const checkedCount = res.data?.checked_count || 0
+      const totalSubmissions = res.data?.total_submissions || 0
+      
+      if (res.data?.results) {
+        console.log('查重详细结果:', res.data.results)
+        
+        // 保存查重结果并显示对话框
+        plagiarismResults.value = res.data.results
+        plagiarismDialogVisible.value = true
+        
+        // 检查是否有失败的查重
+        const failedResults = res.data.results.filter(r => r.status === 'error')
+        if (failedResults.length > 0) {
+          console.warn('存在失败的查重:', failedResults)
+          
+          const errorMessages = failedResults.map(r => 
+            `学生ID ${r.student_id}: ${r.message || '未知错误'}`
+          ).join('\n');
+          
+          ElMessage({
+            type: 'warning',
+            message: `查重完成，但有 ${failedResults.length} 个查重未成功。详细错误已记录到控制台`,
+            duration: 5000
+          })
+          
+          if (failedResults.length <= 3) {
+            failedResults.forEach(result => {
+              ElMessage({
+                type: 'warning',
+                message: `学生ID ${result.student_id} 查重失败: ${result.message}`,
+                duration: 5000
+              })
+            })
+          }
+        } else {
+          ElMessage.success(`一键查重完成，成功查重了 ${checkedCount}/${totalSubmissions} 个模型`)
+        }
+      } else {
+        ElMessage.success(res.message || `一键查重完成，共查重了 ${checkedCount}/${totalSubmissions} 个模型`)
+      }
+      
+      // 刷新列表
+      await fetchEvaluations()
+    } else {
+      ElMessage.error(res.message || '一键查重失败')
+    }
+  } catch (e) {
+    console.error('一键查重失败:', e)
+    
+    let errorMessage = e.message || '未知错误'
+    if (e.response && e.response.data && e.response.data.message) {
+      errorMessage = e.response.data.message
+    }
+    
+    ElMessage.error(`一键查重失败: ${errorMessage}`)
+  } finally {
+    loading.value = false
+    plagiarismLoading.value = false
+  }
+}
+
 const formatDate = (date) => {
   if (!date) return ''
   const d = new Date(date)
@@ -494,6 +637,69 @@ const handleSizeChange = (size) => {
 const handleCurrentChange = (page) => {
   pagination.currentPage = page
   fetchEvaluations()
+}
+
+// 获取相似度颜色
+const getSimilarityColor = (similarity) => {
+  if (similarity >= 80) return '#F56C6C' // 红色
+  if (similarity >= 70) return '#E6A23C' // 橙色
+  if (similarity >= 60) return '#F0C78A' // 浅橙色
+  return '#67C23A' // 绿色
+}
+
+// 获取相似度标签类型
+const getSimilarityTagType = (similarity) => {
+  if (similarity >= 80) return 'danger'
+  if (similarity >= 70) return 'warning'
+  if (similarity >= 60) return 'info'
+  return 'success'
+}
+
+// 获取相似度级别文本
+const getSimilarityLevel = (similarity) => {
+  if (similarity >= 80) return '极高风险'
+  if (similarity >= 70) return '高风险'
+  if (similarity >= 60) return '中等风险'
+  return '低风险'
+}
+
+// 导出查重结果
+const exportPlagiarismResults = () => {
+  if (!plagiarismResults.value || plagiarismResults.value.length === 0) {
+    ElMessage.warning('没有查重结果可导出')
+    return
+  }
+
+  try {
+    // 创建CSV内容
+    let csvContent = 'data:text/csv;charset=utf-8,'
+    csvContent += '学生姓名,学生ID,最高相似度,相似学生,风险评估\n'
+
+    plagiarismResults.value.forEach(result => {
+      const row = [
+        result.student_name,
+        result.student_id,
+        `${result.highest_similarity}%`,
+        result.similar_with_name || '无',
+        getSimilarityLevel(result.highest_similarity)
+      ]
+      csvContent += row.join(',') + '\n'
+    })
+
+    // 创建下载链接
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', `查重结果_实验${filter.experimentId}_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    ElMessage.success('查重结果已导出')
+  } catch (error) {
+    console.error('导出查重结果失败:', error)
+    ElMessage.error('导出查重结果失败: ' + (error.message || '未知错误'))
+  }
 }
 </script>
 
