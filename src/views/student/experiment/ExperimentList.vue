@@ -45,6 +45,12 @@ const uploadExperiment = (id) => {
   router.push(`/student/experiment-upload/${id}`)
 }
 
+// 查看排名
+const viewRanking = (id) => {
+  console.log('查看排名，实验ID:', id);
+  router.push(`/student/score/${id}`);
+}
+
 // 处理搜索
 const handleSearch = () => {
   if (!searchKeyword.value.trim()) {
@@ -126,7 +132,7 @@ onMounted(() => {
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column label="操作" width="280" fixed="right">
         <template #default="{ row }">
           <el-button 
             type="primary" 
@@ -141,7 +147,14 @@ onMounted(() => {
             @click="viewExperiment(row.experiment_id)"
           >
             查看
-          </el-button>  
+          </el-button>
+          <el-button
+            type="success"
+            size="small"
+            @click="viewRanking(row.experiment_id)"
+          >
+            查看排名
+          </el-button>
         </template>
       </el-table-column>
     </el-table>

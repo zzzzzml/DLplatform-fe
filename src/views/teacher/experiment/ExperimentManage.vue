@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getExperimentsList, deleteExperiment } from '../../../api/experiment'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -66,19 +66,59 @@ const editExperiment = (id) => {
 // 删除实验
 const handleDelete = async (id) => {
   try {
-    await ElMessageBox.confirm('确定要删除该实验吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
+    // 显示更详细的确认对话框
+    await ElMessageBox.confirm(
+      '删除实验将同时删除所有相关的文件、提交记录和成绩数据，此操作不可恢复，是否继续？',
+      '删除实验确认',
+      {
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        dangerouslyUseHTMLString: true,
+        customClass: 'delete-confirm-dialog'
+      }
+    )
+
+    // 显示加载状态
+    const loadingInstance = ElLoading.service({
+      lock: true,
+      text: '正在删除实验数据...',
+      background: 'rgba(0, 0, 0, 0.7)'
     })
 
-    await deleteExperiment(id)
-    ElMessage.success('删除成功')
-    fetchExperiments()
+    try {
+      const response = await deleteExperiment(id)
+      
+      // 关闭加载状态
+      loadingInstance.close()
+      
+      if (response && response.code === 200) {
+        ElMessage({
+          type: 'success',
+          message: '实验删除成功'
+        })
+        // 重新获取实验列表
+        fetchExperiments()
+      } else {
+        ElMessage({
+          type: 'error',
+          message: response?.message || '删除失败，请重试'
+        })
+      }
+    } catch (error) {
+      // 关闭加载状态
+      loadingInstance.close()
+      
+      console.error('删除实验失败:', error)
+      ElMessage({
+        type: 'error',
+        message: '删除失败: ' + (error.message || '未知错误')
+      })
+    }
   } catch (error) {
+    // 用户取消删除，不需要显示错误信息
     if (error !== 'cancel') {
-      console.error('Delete failed:', error)
-      ElMessage.error('删除失败')
+      console.error('删除对话框错误:', error)
     }
   }
 }
@@ -90,7 +130,8 @@ const viewExperiment = (id) => {
 
 // 查看提交列表
 const viewSubmissions = (id) => {
-  router.push(`/teacher/tscore/${id}`)
+  console.log('查看排名，实验ID:', id);
+  router.push(`/teacher/score/${id}`);
 }
 
 // 处理分页变化
@@ -249,11 +290,9 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
-.page-title {
-  margin: 0;
+.page-header h1 {
   font-size: 24px;
-  font-weight: 500;
-  color: #303133;
+  margin: 0;
 }
 
 .header-actions {
@@ -262,12 +301,31 @@ onMounted(() => {
 }
 
 .search-input {
-  width: 250px;
+  width: 300px;
 }
 
 .pagination {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+/* 删除确认对话框样式 */
+:deep(.delete-confirm-dialog) {
+  .el-message-box__content {
+    padding: 20px;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  
+  .el-message-box__status {
+    font-size: 24px;
+  }
+  
+  .el-message-box__btns {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
 }
 </style>

@@ -35,6 +35,12 @@ const submitExperiment = () => {
   router.push(`/student/experiment-submit/${experimentId}`)
 }
 
+// 查看排名
+const viewRanking = () => {
+  console.log('查看排名，实验ID:', experimentId);
+  router.push(`/student/score/${experimentId}`);
+}
+
 // 下载附件
 const downloadFile = async (attachment) => {
   try {
@@ -123,6 +129,9 @@ onMounted(() => {
               </el-dropdown-menu>
             </template>
           </el-dropdown>
+          <el-button type="success" @click="viewRanking">
+            查看排名
+          </el-button>
           <el-button type="primary" @click="submitExperiment">
             提交实验
           </el-button>

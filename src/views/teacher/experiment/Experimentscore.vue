@@ -26,28 +26,32 @@
       </div>
       <div class="info-card">
         <h3>参与人数</h3>
-        <div class="value">{{ allStudents.length }}人</div>
+        <div class="value">{{ statistics.student_count }}人</div>
       </div>
       <div class="info-card">
         <h3>平均分数</h3>
-        <div class="value">{{ formatScore(averageScore) }}分</div>
+        <div class="value">{{ statistics.average_score }}分</div>
       </div>
       <div class="info-card">
         <h3>最高分数</h3>
-        <div class="value">{{ maxScore }}分</div>
+        <div class="value">{{ statistics.max_score }}分</div>
+      </div>
+      <div class="info-card">
+        <h3>最低分数</h3>
+        <div class="value">{{ statistics.min_score }}分</div>
       </div>
     </div>
     
     <!-- 搜索结果提示 -->
     <div class="search-result" v-if="searchKeyword.trim()">
-      <span class="result-count">找到 {{ filteredRankings.length }} 个匹配结果</span>
+      <span class="result-count">找到 {{ filteredStudents.length }} 个匹配结果</span>
       <span class="search-indicator">搜索词: "{{ searchKeyword }}"</span>
       <el-button class="reset-btn" type="info" size="small" @click="resetSearch">重置搜索</el-button>
     </div>
     
     <!-- 排名表格 -->
     <el-table
-      :data="pagedRankings"
+      :data="pagedStudents"
       border
       class="ranking-table"
       v-loading="loading"
@@ -60,7 +64,7 @@
       
       <el-table-column label="排名" width="80" align="center">
         <template #default="{ row }">
-          <span class="rank-cell">{{ row.calculatedRank }}</span>
+          <span class="rank-badge" :class="getRankClass(row.rank)">{{ row.rank }}</span>
         </template>
       </el-table-column>
       
@@ -80,18 +84,18 @@
     </el-table>
     
     <!-- 无结果提示 -->
-    <div class="empty-result" v-if="searchKeyword.trim() && !filteredRankings.length">
+    <div class="empty-result" v-if="searchKeyword.trim() && !filteredStudents.length">
       <el-empty description="未找到匹配的学生">
         <el-button type="primary" @click="resetSearch">重置搜索</el-button>
       </el-empty>
     </div>
     
     <!-- 分页控件 -->
-    <div class="pagination" v-if="filteredRankings.length > 0">
+    <div class="pagination" v-if="filteredStudents.length > 0">
       <el-pagination
         background
         layout="total, prev, pager, next"
-        :total="filteredRankings.length"
+        :total="filteredStudents.length"
         :current-page="currentPage"
         :page-size="pageSize"
         @current-change="handlePageChange"
@@ -116,6 +120,7 @@ const pageSize = ref(10)
 // 动态数据
 const experimentName = ref('')
 const allStudents = ref([])
+const statistics = ref({}) // 用于存储后端返回的统计数据
 
 // 获取实验ID
 const experimentId = computed(() => route.params.id || route.query.experimentId)
@@ -131,18 +136,20 @@ const fetchRanking = async () => {
     const res = await getTeacherExperimentRanking(experimentId.value)
     if (res && res.code === 200 && res.data) {
       experimentName.value = res.data.experiment_name || ''
-      // 数据清洗：确保分数为有效数字
       allStudents.value = (res.data.students || []).map(student => ({
         ...student,
-        score: Number(student.score) || 0 // 无效分数默认设为0
+        score: Number(student.score) || 0
       }))
+      statistics.value = res.data.statistics || {} // 更新统计数据
     } else {
       ElMessage.error(res?.message || '获取数据失败')
       allStudents.value = []
+      statistics.value = {}
     }
   } catch (e) {
     ElMessage.error('获取实验排名失败')
     allStudents.value = []
+    statistics.value = {}
   } finally {
     loading.value = false
   }
@@ -168,46 +175,14 @@ const rankedStudents = computed(() => {
     
     return {
       ...student,
-      calculatedRank: currentRank
+      rank: currentRank,
+      index: index + 1 // 序号（自然排序）
     }
   })
 })
 
-// 计算统计数据 - 修复平均分计算问题
-const averageScore = computed(() => {
-  // 处理空数组情况
-  if (allStudents.value.length === 0) {
-    return 0
-  }
-  
-  // 计算总分（只包含有效分数）
-  const total = allStudents.value.reduce((sum, student) => {
-    // 确保分数是数字
-    const score = Number(student.score)
-    return sum + (isNaN(score) ? 0 : score)
-  }, 0)
-  
-  // 计算平均分
-  return total / allStudents.value.length
-})
-
-// 计算最高分（优化版）
-const maxScore = computed(() => {
-  if (allStudents.value.length === 0) {
-    return 0
-  }
-  
-  // 提取所有有效分数
-  const validScores = allStudents.value.map(student => {
-    const score = Number(student.score)
-    return isNaN(score) ? 0 : score
-  })
-  
-  return Math.max(...validScores)
-})
-
 // 搜索过滤
-const filteredRankings = computed(() => {
+const filteredStudents = computed(() => {
   if (!searchKeyword.value.trim()) {
     return rankedStudents.value
   }
@@ -219,9 +194,9 @@ const filteredRankings = computed(() => {
 })
 
 // 分页处理
-const pagedRankings = computed(() => {
+const pagedStudents = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
-  return filteredRankings.value.slice(start, start + pageSize.value)
+  return filteredStudents.value.slice(start, start + pageSize.value)
 })
 
 // 搜索处理
@@ -262,14 +237,12 @@ const highlightKeyword = (text) => {
   )
 }
 
-// 格式化分数显示（处理NaN和保留一位小数）
-const formatScore = (score) => {
-  // 处理NaN情况
-  if (isNaN(score)) {
-    return '0.0'
-  }
-  // 保留一位小数
-  return score.toFixed(1)
+// 获取排名样式
+const getRankClass = (rank) => {
+  if (rank === 1) return 'rank-first'
+  if (rank === 2) return 'rank-second'
+  if (rank === 3) return 'rank-third'
+  return ''
 }
 
 onMounted(() => {
@@ -384,6 +357,31 @@ onMounted(() => {
 
 .reset-btn {
   margin-left: 15px;
+}
+
+.rank-badge {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  border-radius: 50%;
+  font-weight: bold;
+}
+
+.rank-first {
+  background-color: #f56c6c;
+  color: white;
+}
+
+.rank-second {
+  background-color: #e6a23c;
+  color: white;
+}
+
+.rank-third {
+  background-color: #67c23a;
+  color: white;
 }
 
 .rank-cell, .score-cell {

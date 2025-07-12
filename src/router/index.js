@@ -115,13 +115,7 @@ const routes = [
         component: () => import('../views/teacher/profile/Profile.vue')
       },
       {
-        path: 'tscore/:id',
-        name: 'Tscoreranking',
-        component: () => import('../views/teacher/experiment/Experimentscore.vue')
-      }
-      ,
-      {
-        path: 'tscore',
+        path: 'score/:id',
         name: 'Tscoreranking',
         component: () => import('../views/teacher/experiment/Experimentscore.vue')
       }

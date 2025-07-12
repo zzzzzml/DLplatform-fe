@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../../stores/user'
-import { getTeacherExperiments } from '../../api/experiment'
+import { getTeacherExperiments, getTeacherDashboardStats } from '../../api/experiment'
 import {
   Document,
   TrendCharts,
@@ -18,17 +18,33 @@ import {
   Check,
   Files
 } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const recentExperiments = ref([])
 const loading = ref(false)
+const statsLoading = ref(false)
 const stats = ref({
   totalExperiments: 0,
   activeExperiments: 0,
   pendingEvaluations: 0,
-  totalStudents: 0
+  totalStudents: 0,
+  submittedStudents: 0,
+  completedExperiments: 0
+})
+
+// 计算教学进度 - 已完成实验占总实验的百分比
+const teachingProgress = computed(() => {
+  if (stats.value.totalExperiments === 0) return 0
+  return Math.round((stats.value.completedExperiments / stats.value.totalExperiments) * 100)
+})
+
+// 计算学生参与度 - 提交作业的学生占总学生的百分比
+const studentParticipation = computed(() => {
+  if (stats.value.totalStudents === 0) return 0
+  return Math.round((stats.value.submittedStudents / stats.value.totalStudents) * 100)
 })
 
 // 快速操作配置
@@ -74,22 +90,33 @@ const fetchRecentExperiments = async () => {
     })
     recentExperiments.value = res.data || []
     // 更新统计数据
-    stats.value.pendingEvaluations = res.pendingEvaluations || 0
+    if (res.pendingEvaluations !== undefined) {
+      stats.value.pendingEvaluations = res.pendingEvaluations
+    }
   } catch (error) {
     console.error('Failed to fetch recent experiments:', error)
+    ElMessage.error('获取最近实验数据失败')
   } finally {
     loading.value = false
   }
 }
 
+// 获取教师首页统计数据
 const fetchStats = async () => {
+  statsLoading.value = true
   try {
-    // 这里应该调用真实的API获取统计数据
-    // 暂时保持空状态，等待后端API实现
-    // const response = await api.getTeacherStats()
-    // stats.value = response.data
+    const response = await getTeacherDashboardStats()
+    if (response.code === 200 && response.data) {
+      stats.value = response.data
+      console.log('获取到的统计数据:', stats.value)
+    } else {
+      console.error('获取统计数据失败:', response.message)
+    }
   } catch (error) {
-    console.error('Failed to fetch stats:', error)
+    console.error('获取统计数据失败:', error)
+    ElMessage.error('获取统计数据失败')
+  } finally {
+    statsLoading.value = false
   }
 }
 
@@ -200,11 +227,11 @@ onUnmounted(() => {
 
     <div class="main-content">
       <!-- 欢迎横幅 -->
-      <div class="welcome-banner animate-fade-in-up">
+      <div class="welcome-banner animate-fade-in-up" v-loading="statsLoading">
         <div class="banner-content">
           <div class="welcome-text">
             <h1 class="welcome-title">
-              欢迎回来，<span class="text-gradient">{{ userStore.userInfo?.name || '老师' }}</span>
+              欢迎回来，<span class="text-gradient">{{ userStore.userInfo?.realname || '老师' }}</span>
             </h1>
             <p class="welcome-subtitle">
               管理您的教学实验，指导学生探索深度学习的奥秘
@@ -290,9 +317,9 @@ onUnmounted(() => {
           <div v-else class="experiments-grid">
             <div
               v-for="experiment in recentExperiments"
-              :key="experiment.id"
+              :key="experiment.id || experiment.experiment_id"
               class="experiment-card"
-              @click="viewExperiment(experiment.id)"
+              @click="viewExperiment(experiment.id || experiment.experiment_id)"
             >
               <div class="experiment-header">
                 <div class="experiment-status">
@@ -310,17 +337,17 @@ onUnmounted(() => {
               </div>
 
               <div class="experiment-content">
-                <h3 class="experiment-title">{{ experiment.title }}</h3>
+                <h3 class="experiment-title">{{ experiment.title || experiment.experiment_name }}</h3>
                 <p class="experiment-description">{{ experiment.description }}</p>
 
                 <div class="experiment-meta">
                   <div class="meta-item">
                     <el-icon><Clock /></el-icon>
-                    <span>{{ experiment.startTime }}</span>
+                    <span>{{ experiment.startTime || experiment.publish_time }}</span>
                   </div>
                   <div class="meta-item">
                     <el-icon><Clock /></el-icon>
-                    <span>截止：{{ experiment.endTime }}</span>
+                    <span>截止：{{ experiment.endTime || experiment.deadline }}</span>
                   </div>
                 </div>
               </div>
@@ -341,7 +368,7 @@ onUnmounted(() => {
       </div>
 
       <!-- 教学概览 -->
-      <div class="teaching-overview animate-fade-in-up animate-delay-600">
+      <div class="teaching-overview animate-fade-in-up animate-delay-600" v-loading="statsLoading">
         <h2 class="section-title">
           <el-icon><DataAnalysis /></el-icon>
           教学概览
@@ -350,29 +377,29 @@ onUnmounted(() => {
           <div class="overview-card">
             <div class="overview-header">
               <h3>本周教学进度</h3>
-              <span class="overview-percentage">85%</span>
+              <span class="overview-percentage">{{ teachingProgress }}%</span>
             </div>
             <div class="overview-bar-container">
-              <div class="overview-bar" style="width: 85%"></div>
+              <div class="overview-bar" :style="{ width: `${teachingProgress}%` }"></div>
             </div>
-            <p class="overview-description">已发布 4/5 个计划实验</p>
+            <p class="overview-description">已完成 {{ stats.completedExperiments || 0 }}/{{ stats.totalExperiments || 0 }} 个实验</p>
           </div>
 
           <div class="overview-card">
             <div class="overview-header">
               <h3>学生参与度</h3>
-              <span class="overview-percentage">92%</span>
+              <span class="overview-percentage">{{ studentParticipation }}%</span>
             </div>
             <div class="overview-bar-container">
-              <div class="overview-bar participation-bar" style="width: 92%"></div>
+              <div class="overview-bar participation-bar" :style="{ width: `${studentParticipation}%` }"></div>
             </div>
-            <p class="overview-description">活跃学生比例</p>
+            <p class="overview-description">{{ stats.submittedStudents || 0 }}/{{ stats.totalStudents || 0 }} 名学生已提交作业</p>
           </div>
         </div>
       </div>
 
       <!-- 教学统计 -->
-      <div class="teaching-stats animate-fade-in-up animate-delay-800">
+      <div class="teaching-stats animate-fade-in-up animate-delay-800" v-loading="statsLoading">
         <h2 class="section-title">
           <el-icon><TrendCharts /></el-icon>
           教学统计
@@ -432,8 +459,8 @@ onUnmounted(() => {
               <el-icon><Management /></el-icon>
             </div>
             <div class="suggestion-content">
-              <h3>优化实验设计</h3>
-              <p>根据学生反馈调整实验难度和内容安排</p>
+              <h3>{{ teachingProgress < 50 ? '加快教学进度' : '实验安排合理' }}</h3>
+              <p>{{ teachingProgress < 50 ? '您的实验完成率较低，建议适当调整实验进度' : '您的实验进度良好，继续保持' }}</p>
             </div>
           </div>
 
@@ -442,8 +469,8 @@ onUnmounted(() => {
               <el-icon><Check /></el-icon>
             </div>
             <div class="suggestion-content">
-              <h3>及时评价反馈</h3>
-              <p>保持对学生提交作业的及时评价和指导</p>
+              <h3>{{ stats.pendingEvaluations > 0 ? `${stats.pendingEvaluations}个待评价实验` : '评价工作已完成' }}</h3>
+              <p>{{ stats.pendingEvaluations > 0 ? '有学生提交等待您的评价，请及时处理' : '您已完成所有评价工作，做得很好！' }}</p>
             </div>
           </div>
 
@@ -452,8 +479,8 @@ onUnmounted(() => {
               <el-icon><Files /></el-icon>
             </div>
             <div class="suggestion-content">
-              <h3>丰富教学资源</h3>
-              <p>增加更多样化的学习材料和参考资源</p>
+              <h3>{{ studentParticipation < 70 ? '提高学生参与度' : '学生参与度良好' }}</h3>
+              <p>{{ studentParticipation < 70 ? '部分学生未提交作业，建议加强督促和指导' : '大部分学生都积极参与实验，继续保持良好互动' }}</p>
             </div>
           </div>
         </div>

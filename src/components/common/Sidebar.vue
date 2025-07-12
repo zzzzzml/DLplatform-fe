@@ -7,7 +7,8 @@ import {
   Files,
   Check,
   User,
-  List
+  List,
+  TrendCharts
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -54,8 +55,13 @@ const studentMenus = [
   },
   {
     title: '实验结果',
-    path: '/student/result',
+    path: '/student/result-list',
     icon: List
+  },
+  {
+    title: '实验排名',
+    path: '/student/experiment-list',
+    icon: TrendCharts
   }
 ]
 

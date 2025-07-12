@@ -45,8 +45,7 @@ const menuItems = [
     icon: TrendCharts,
     key: 'evaluation',
     children: [
-      { title: '评估管理', path: '/teacher/evaluation' },
-      { title: '数据分析', path: '/teacher/analytics' }
+      { title: '评估管理', path: '/teacher/evaluation' }
     ]
   },
   {

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getExperimentDetail } from '../../../api/experiment'
+import { getTeacherExperimentDetail } from '../../../api/experiment'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 
@@ -16,9 +16,10 @@ const loading = ref(false)
 const fetchExperimentDetail = async () => {
   loading.value = true
   try {
-    const response = await getExperimentDetail(experimentId)
+    const response = await getTeacherExperimentDetail(experimentId)
     if (response.code === 200) {
-      experiment.value = response.data
+      experiment.value = response.data.experiment
+      console.log('获取到实验详情:', experiment.value)
     } else {
       ElMessage.error(response.message || '获取实验详情失败')
     }
@@ -48,6 +49,11 @@ const viewSubmissions = () => {
   })
 }
 
+// 查看排名
+const viewRanking = () => {
+  router.push(`/teacher/score/${experimentId}`)
+}
+
 // 格式化日期时间
 const formatDateTime = (dateTimeStr) => {
   if (!dateTimeStr) return '-'
@@ -59,6 +65,40 @@ const formatDateTime = (dateTimeStr) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+// 获取状态文本
+const getStatusText = (exp) => {
+  if (!exp || !exp.deadline) return '未知'
+  
+  const currentTime = new Date().getTime()
+  const endTime = new Date(exp.deadline).getTime()
+  const startTime = exp.publish_time ? new Date(exp.publish_time).getTime() : currentTime
+  
+  if (currentTime > endTime) {
+    return '已结束'
+  } else if (currentTime < startTime) {
+    return '未开始'
+  } else {
+    return '进行中'
+  }
+}
+
+// 获取状态标签类型
+const getStatusType = (exp) => {
+  if (!exp || !exp.deadline) return 'info'
+  
+  const currentTime = new Date().getTime()
+  const endTime = new Date(exp.deadline).getTime()
+  const startTime = exp.publish_time ? new Date(exp.publish_time).getTime() : currentTime
+  
+  if (currentTime > endTime) {
+    return 'info' // 已结束-蓝色
+  } else if (currentTime < startTime) {
+    return 'warning' // 未开始-橙色
+  } else {
+    return 'success' // 进行中-绿色
+  }
 }
 
 onMounted(() => {
@@ -75,6 +115,9 @@ onMounted(() => {
           <h2>{{ experiment.experiment_name }}</h2>
         </div>
         <div class="actions">
+          <el-button type="warning" @click="viewRanking">
+            查看排名
+          </el-button>
           <el-button type="info" @click="viewSubmissions">
             查看提交
           </el-button>
@@ -98,6 +141,22 @@ onMounted(() => {
           <div class="info-item">
             <span class="label">截止时间：</span>
             <span class="value">{{ formatDateTime(experiment.deadline) }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">发布时间：</span>
+            <span class="value">{{ formatDateTime(experiment.publish_time) }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">班级ID：</span>
+            <span class="value">{{ experiment.class_id }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">实验状态：</span>
+            <span class="value">
+              <el-tag :type="getStatusType(experiment)">
+                {{ getStatusText(experiment) }}
+              </el-tag>
+            </span>
           </div>
         </div>
       </el-card>

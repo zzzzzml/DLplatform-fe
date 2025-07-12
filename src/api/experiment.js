@@ -35,6 +35,24 @@ export function getExperimentDetail(experimentId) {
   })
 }
 
+// 获取教师实验详情
+export function getTeacherExperimentDetail(experimentId) {
+  // 确保experimentId是数字
+  const numericExperimentId = parseInt(experimentId)
+  if (isNaN(numericExperimentId)) {
+    console.error(`getTeacherExperimentDetail: 实验ID不是有效的数字: ${experimentId}`)
+    return Promise.reject(new Error(`实验ID不是有效的数字: ${experimentId}`))
+  }
+  
+  return request({
+    url: '/teacher/experiment/detail',
+    method: 'get',
+    params: {
+      experiment_id: numericExperimentId
+    }
+  })
+}
+
 // 下载附件
 export function downloadAttachment(attachmentId) {
   return request({
@@ -78,18 +96,42 @@ export function publishExperimentWithAttachment(formData) {
 
 // 更新实验
 export function updateExperiment(id, data) {
+  // 确保id是数字
+  const numericId = parseInt(id)
+  if (isNaN(numericId)) {
+    console.error(`updateExperiment: 实验ID不是有效的数字: ${id}`)
+    return Promise.reject(new Error(`实验ID不是有效的数字: ${id}`))
+  }
+  
+  console.log('更新实验，参数:', { id: numericId, data })
+  
   return request({
-    url: `/experiments/${id}`,
-    method: 'put',
-    data
+    url: '/teacher/experiment/update',
+    method: 'post',
+    data: {
+      experiment_id: numericId,
+      ...data
+    }
   })
 }
 
 // 删除实验
 export function deleteExperiment(id) {
+  // 确保id是数字
+  const numericId = parseInt(id)
+  if (isNaN(numericId)) {
+    console.error(`deleteExperiment: 实验ID不是有效的数字: ${id}`)
+    return Promise.reject(new Error(`实验ID不是有效的数字: ${id}`))
+  }
+  
+  console.log('删除实验，ID:', numericId)
+  
   return request({
-    url: `/experiments/${id}`,
-    method: 'delete'
+    url: '/teacher/experiment/delete',
+    method: 'post',
+    data: {
+      experiment_id: numericId
+    }
   })
 }
 
@@ -199,24 +241,43 @@ export function evaluateSubmissionTeacher(id, data) {
 
 // 学生端获取实验排名
 export function getExperimentRanking(experimentId, studentId) {
-  const data = { experiment_id: experimentId };
+  // 确保experimentId是数字
+  const numericExperimentId = parseInt(experimentId)
+  if (isNaN(numericExperimentId)) {
+    console.error(`getExperimentRanking: 实验ID不是有效的数字: ${experimentId}`)
+    return Promise.reject(new Error(`实验ID不是有效的数字: ${experimentId}`))
+  }
+
+  const data = { experiment_id: numericExperimentId };
   if (studentId !== undefined) {
     data.student_id = studentId;
   }
+  
+  console.log('调用实验排名API，参数:', data);
+  
   return request({
     url: '/student/experiment/scores',
     method: 'post',
     data
   })
-} 
+}
 
 // 教师端获取实验排名
 export function getTeacherExperimentRanking(experimentId) {
+  // 确保experimentId是数字
+  const numericExperimentId = parseInt(experimentId)
+  if (isNaN(numericExperimentId)) {
+    console.error(`getTeacherExperimentRanking: 实验ID不是有效的数字: ${experimentId}`)
+    return Promise.reject(new Error(`实验ID不是有效的数字: ${experimentId}`))
+  }
+  
+  console.log('调用教师实验排名API，参数:', { experiment_id: numericExperimentId });
+  
   return request({
     url: '/teacher/experiment/scores',
     method: 'post',
     data: {
-      experiment_id: experimentId
+      experiment_id: numericExperimentId
     }
   })
 }
@@ -257,5 +318,21 @@ export function evaluateAll(experimentId) {
   }).catch(error => {
     console.error('一键评测错误:', error)
     return Promise.reject(error)
+  })
+}
+
+// 获取教师首页统计数据
+export function getTeacherDashboardStats() {
+  return request({
+    url: '/teacher/dashboard/stats',
+    method: 'get'
+  })
+}
+
+// 获取学生首页统计数据
+export function getStudentDashboardStats() {
+  return request({
+    url: '/student/dashboard/stats',
+    method: 'get'
   })
 }

@@ -4,7 +4,12 @@
       <template #header>
         <div class="card-header">
           <h2>实验评价详情</h2>
-          <el-button @click="goBack">返回列表</el-button>
+          <div class="header-actions">
+            <el-button type="success" @click="downloadSubmission" :disabled="!submission.id">
+              <el-icon><Download /></el-icon>下载提交文件
+            </el-button>
+            <el-button @click="goBack">返回列表</el-button>
+          </div>
         </div>
       </template>
       <div v-if="loading" class="loading-container">
@@ -90,8 +95,9 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { getSubmissionDetail, evaluateSubmission } from '@/api/experiment'
+import { Download } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -231,6 +237,86 @@ const submitEvaluation = async () => {
   })
 }
 
+// 下载提交文件
+const downloadSubmission = async () => {
+  if (!submission.value.id) {
+    ElMessage.warning('提交文件ID不存在，无法下载')
+    return
+  }
+  
+  try {
+    // 显示加载状态
+    const loadingInstance = ElLoading.service({
+      lock: true,
+      text: '正在准备下载...',
+      background: 'rgba(0, 0, 0, 0.7)'
+    });
+    
+    // 构建下载URL
+    const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const downloadUrl = `${baseURL}/download/submission/${submission.value.id}`;
+    
+    console.log('下载URL:', downloadUrl);
+    
+    // 使用fetch API获取文件
+    const response = await fetch(downloadUrl);
+    
+    if (!response.ok) {
+      // 尝试解析错误响应
+      let errorMessage = '下载失败';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || `下载失败 (${response.status})`;
+      } catch (e) {
+        errorMessage = `下载失败: HTTP ${response.status}`;
+      }
+      
+      ElMessage.error(errorMessage);
+      loadingInstance.close();
+      return;
+    }
+    
+    // 获取文件名
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'download.zip';
+    
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1];
+      }
+    }
+    
+    // 将响应转换为Blob
+    const blob = await response.blob();
+    
+    // 创建下载链接
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+    
+    // 添加到文档并触发点击
+    document.body.appendChild(link);
+    link.click();
+    
+    // 清理
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }, 100);
+    
+    // 关闭加载状态
+    loadingInstance.close();
+    ElMessage.success('文件下载已开始');
+    
+  } catch (error) {
+    ElMessage.error('下载失败: ' + (error.message || '未知错误'));
+    console.error('下载文件失败:', error);
+  }
+}
+
 // 返回列表
 const goBack = () => {
   router.push('/teacher/evaluation')
@@ -250,6 +336,11 @@ const goBack = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px; /* Add some space between buttons */
 }
 
 .loading-container {

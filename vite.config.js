@@ -17,4 +17,17 @@ export default defineConfig({
   },
   // 修复iOS上的白屏问题
   base: './',
+  // 添加代理配置
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+      '/download': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      }
+    }
+  }
 })

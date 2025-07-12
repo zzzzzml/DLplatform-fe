@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'  //这里调用vue的路由 useRouter 里面的这个玩意
 import { useUserStore } from '../../stores/user'
 import { useExperimentStore } from '../../stores/experiment'
+import { getStudentDashboardStats } from '../../api/experiment'
 import {
   Document,
   TrendCharts,
@@ -22,6 +23,7 @@ const experimentStore = useExperimentStore()
 
 const recentExperiments = ref([])
 const loading = ref(false)
+const statsLoading = ref(false)
 const stats = ref({
   totalExperiments: 0,
   completedExperiments: 0,
@@ -38,18 +40,11 @@ const quickActions = [
     path: '/student/experiment-list'
   },
   {
-    title: '学习分析',
-    description: '查看学习进度和成绩统计',
-    icon: TrendCharts,
-    color: 'success',
-    path: '/student/analytics'
-  },
-  {
     title: '实验结果',
     description: '查看已完成实验的评分',
     icon: Trophy,
     color: 'warning',
-    path: '/student/result'
+    path: '/student/result-list'
   },
   {
     title: '个人设置',
@@ -82,13 +77,24 @@ const fetchRecentExperiments = async () => {
 }
 
 const fetchStats = async () => {
+  statsLoading.value = true
   try {
-    // 这里应该调用真实的API获取统计数据
-    // 暂时保持空状态，等待后端API实现
-    // const response = await api.getStudentStats()
-    // stats.value = response.data
+    // 调用学生统计数据API
+    const response = await getStudentDashboardStats()
+    if (response && response.code === 200 && response.data) {
+      stats.value = response.data
+    }
   } catch (error) {
-    console.error('Failed to fetch stats:', error)
+    console.error('获取学生统计数据失败:', error)
+    // 使用默认数据
+    stats.value = {
+      totalExperiments: 0,
+      completedExperiments: 0,
+      averageScore: 0,
+      currentRank: 0
+    }
+  } finally {
+    statsLoading.value = false
   }
 }
 
@@ -197,7 +203,7 @@ onUnmounted(() => {
         <div class="banner-content">
           <div class="welcome-text">
             <h1 class="welcome-title">
-              欢迎回来，<span class="text-gradient">{{ userStore.userInfo?.name || '同学' }}</span>
+              欢迎回来，<span class="text-gradient">{{ userStore.userInfo?.realname || '同学' }}</span>
             </h1>
             <p class="welcome-subtitle">
               继续您的深度学习之旅，探索人工智能的无限可能
@@ -361,24 +367,24 @@ onUnmounted(() => {
         <div class="progress-container">
           <div class="progress-card">
             <div class="progress-header">
-              <h3>本周学习目标</h3>
-              <span class="progress-percentage">75%</span>
+              <h3>实验完成进度</h3>
+              <span class="progress-percentage">{{ completionRate }}%</span>
             </div>
             <div class="progress-bar-container">
-              <div class="progress-bar" style="width: 75%"></div>
+              <div class="progress-bar" :style="`width: ${completionRate}%`"></div>
             </div>
-            <p class="progress-description">已完成 3/4 个实验任务</p>
+            <p class="progress-description">已完成 {{ stats.completedExperiments }}/{{ stats.totalExperiments }} 个实验任务</p>
           </div>
 
           <div class="progress-card">
             <div class="progress-header">
-              <h3>技能掌握度</h3>
-              <span class="progress-percentage">68%</span>
+              <h3>学习成绩</h3>
+              <span class="progress-percentage">{{ stats.averageScore }}</span>
             </div>
             <div class="progress-bar-container">
-              <div class="progress-bar skill-progress" style="width: 68%"></div>
+              <div class="progress-bar skill-progress" :style="`width: ${stats.averageScore}%`"></div>
             </div>
-            <p class="progress-description">深度学习基础知识</p>
+            <p class="progress-description">当前班级排名: {{ stats.currentRank > 0 ? `第${stats.currentRank}名` : '暂无排名' }}</p>
           </div>
         </div>
       </div>
@@ -444,8 +450,8 @@ onUnmounted(() => {
               <el-icon><Notebook /></el-icon>
             </div>
             <div class="suggestion-content">
-              <h3>加强基础练习</h3>
-              <p>建议完成更多基础实验来巩固理论知识</p>
+              <h3>{{ completionRate < 50 ? '加快学习进度' : '保持学习节奏' }}</h3>
+              <p>{{ completionRate < 50 ? '您的实验完成率较低，建议抓紧时间完成实验任务' : '您的实验完成情况良好，继续保持' }}</p>
             </div>
           </div>
 
@@ -454,8 +460,8 @@ onUnmounted(() => {
               <el-icon><TrendCharts /></el-icon>
             </div>
             <div class="suggestion-content">
-              <h3>关注学习进度</h3>
-              <p>保持稳定的学习节奏，按时完成实验任务</p>
+              <h3>{{ stats.averageScore < 70 ? '提高实验质量' : '挑战更高难度' }}</h3>
+              <p>{{ stats.averageScore < 70 ? '您的平均分还有提升空间，建议认真完成每个实验' : '您的平均分表现优秀，可以尝试更具挑战性的任务' }}</p>
             </div>
           </div>
 
@@ -464,8 +470,8 @@ onUnmounted(() => {
               <el-icon><Trophy /></el-icon>
             </div>
             <div class="suggestion-content">
-              <h3>挑战高难度</h3>
-              <p>尝试更具挑战性的实验项目提升技能水平</p>
+              <h3>{{ stats.currentRank > 0 && stats.currentRank <= 3 ? '继续保持领先' : '提升班级排名' }}</h3>
+              <p>{{ stats.currentRank > 0 && stats.currentRank <= 3 ? '您在班级中表现优异，继续保持领先优势' : '通过高质量的实验提交提升您在班级中的排名' }}</p>
             </div>
           </div>
         </div>

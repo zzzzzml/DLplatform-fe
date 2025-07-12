@@ -123,7 +123,7 @@
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElLoading } from 'element-plus'
 import { getTeacherExperiments, getEvaluations, evaluateAll } from '@/api/experiment'
 import { getClasses } from '@/api/class'
 
@@ -254,14 +254,83 @@ const fetchEvaluations = async () => {
   }
 }
 
-const downloadFile = (row) => {
-  if (!row.file_path || !row.file_name) return
-  const link = document.createElement('a')
-  link.href = `/static/${row.file_path}/${row.file_name}`
-  link.download = row.file_name
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+const downloadFile = async (row) => {
+  if (!row.id) {
+    ElMessage.error('无法下载：缺少提交ID');
+    return;
+  }
+  
+  try {
+    // 显示加载状态
+    const loadingInstance = ElLoading.service({
+      lock: true,
+      text: '正在准备下载...',
+      background: 'rgba(0, 0, 0, 0.7)'
+    });
+    
+    // 构建下载URL
+    const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const downloadUrl = `${baseURL}/download/submission/${row.id}`;
+    
+    console.log('下载URL:', downloadUrl);
+    
+    // 使用fetch API获取文件
+    const response = await fetch(downloadUrl);
+    
+    if (!response.ok) {
+      // 尝试解析错误响应
+      let errorMessage = '下载失败';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || `下载失败 (${response.status})`;
+      } catch (e) {
+        errorMessage = `下载失败: HTTP ${response.status}`;
+      }
+      
+      ElMessage.error(errorMessage);
+      loadingInstance.close();
+      return;
+    }
+    
+    // 获取文件名
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'download.zip';
+    
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1];
+      }
+    }
+    
+    // 将响应转换为Blob
+    const blob = await response.blob();
+    
+    // 创建下载链接
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+    
+    // 添加到文档并触发点击
+    document.body.appendChild(link);
+    link.click();
+    
+    // 清理
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }, 100);
+    
+    // 关闭加载状态
+    loadingInstance.close();
+    ElMessage.success('文件下载已开始');
+    
+  } catch (error) {
+    ElMessage.error('下载失败: ' + (error.message || '未知错误'));
+    console.error('下载文件失败:', error);
+  }
 }
 
 const handleAutoEvaluate = async (row) => {
@@ -327,9 +396,7 @@ const handleEvaluateAll = async () => {
       const evaluatedCount = res.data?.evaluated_count || 0
       const totalSubmissions = res.data?.total_submissions || 0
       
-      ElMessage.success(res.message || `一键评测完成，共评测了 ${evaluatedCount}/${totalSubmissions} 个模型`)
-      
-      // 如果有详细结果，可以在控制台输出
+      // 检查是否有详细结果
       if (res.data?.results) {
         console.log('评测详细结果:', res.data.results)
         
@@ -337,8 +404,33 @@ const handleEvaluateAll = async () => {
         const failedResults = res.data.results.filter(r => r.status !== 'success')
         if (failedResults.length > 0) {
           console.warn('存在失败的评测:', failedResults)
-          ElMessage.warning(`有 ${failedResults.length} 个评测未成功，详情请查看控制台`)
+          
+          // 显示更详细的错误信息
+          const errorMessages = failedResults.map(r => 
+            `学生ID ${r.student_id}: ${r.message || '未知错误'}`
+          ).join('\n');
+          
+          ElMessage({
+            type: 'warning',
+            message: `评测完成，但有 ${failedResults.length} 个评测未成功。详细错误已记录到控制台`,
+            duration: 5000
+          })
+          
+          // 如果错误不多，可以直接显示在界面上
+          if (failedResults.length <= 3) {
+            failedResults.forEach(result => {
+              ElMessage({
+                type: 'warning',
+                message: `学生ID ${result.student_id} 评测失败: ${result.message}`,
+                duration: 5000
+              })
+            })
+          }
+        } else {
+          ElMessage.success(`一键评测完成，成功评测了 ${evaluatedCount}/${totalSubmissions} 个模型`)
         }
+      } else {
+        ElMessage.success(res.message || `一键评测完成，共评测了 ${evaluatedCount}/${totalSubmissions} 个模型`)
       }
       
       // 刷新列表

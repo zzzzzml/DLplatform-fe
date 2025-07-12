@@ -33,15 +33,8 @@ const menuItems = [
     icon: Document,
     key: 'experiment',
     children: [
-      { title: '实验列表', path: '/student/experiment-list' },
-      { title: '我的提交', path: '/student/result' }
+      { title: '实验列表', path: '/student/experiment-list' }
     ]
-  },
-  {
-    title: '学习分析',
-    icon: TrendCharts,
-    path: '/student/analytics',
-    key: 'analytics'
   },
   {
     title: '个人中心',

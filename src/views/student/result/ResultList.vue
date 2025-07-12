@@ -1,7 +1,10 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { getStudentResults } from '../../../api/experiment'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const results = ref([])
 const loading = ref(false)
 const currentPage = ref(1)
@@ -58,6 +61,11 @@ const viewFeedback = (result) => {
   })
 }
 
+// 查看排名
+const viewRanking = (experimentId) => {
+  router.push(`/student/score/${experimentId}`)
+}
+
 onMounted(() => {
   fetchResults()
 })
@@ -69,74 +77,61 @@ onMounted(() => {
       <h2>实验结果</h2>
     </div>
 
-    <el-card v-loading="loading">
-      <el-table :data="results" border style="width: 100%">
-        <el-table-column prop="experimentTitle" label="实验名称" min-width="200" />
-        <el-table-column prop="teacherName" label="评价教师" width="120" />
-        <el-table-column prop="submitTime" label="提交时间" width="180" />
-        <el-table-column prop="evaluateTime" label="评价时间" width="180" />
-        <el-table-column prop="score" label="分数" width="100">
-          <template #default="{ row }">
-            <span :class="{'high-score': row.score >= 90, 'medium-score': row.score >= 70 && row.score < 90, 'low-score': row.score < 70}">
-              {{ row.score }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="rank" label="排名" width="100" />
-        <el-table-column label="操作" width="150" fixed="right">
-          <template #default="{ row }">
-            <el-button type="primary" size="small" @click="viewFeedback(row)">
-              查看评价
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+    <div class="stats-cards">
+      <el-card class="stat-card">
+        <div class="stat-title">平均分</div>
+        <div class="stat-value">{{ averageScore }}</div>
+      </el-card>
+      <el-card class="stat-card">
+        <div class="stat-title">最高分</div>
+        <div class="stat-value">{{ maxScore }}</div>
+      </el-card>
+      <el-card class="stat-card">
+        <div class="stat-title">最低分</div>
+        <div class="stat-value">{{ minScore }}</div>
+      </el-card>
+    </div>
 
-      <div class="pagination">
-        <el-pagination
-          background
-          layout="total, prev, pager, next"
-          :total="total"
-          :current-page="currentPage"
-          :page-size="pageSize"
-          @current-change="handlePageChange"
-        />
-      </div>
-    </el-card>
+    <el-table
+      v-loading="loading"
+      :data="results"
+      border
+      style="width: 100%; margin-top: 20px;"
+    >
+      <el-table-column label="实验名称" prop="experiment_name" min-width="200" />
+      <el-table-column label="提交时间" prop="submit_time" width="180" />
+      <el-table-column label="评分" prop="score" width="100" align="center" />
+      <el-table-column label="操作" width="200" align="center">
+        <template #default="{ row }">
+          <el-button
+            type="primary"
+            size="small"
+            @click="viewFeedback(row)"
+            v-if="row.feedback"
+          >
+            查看评价
+          </el-button>
+          <el-button
+            type="success"
+            size="small"
+            @click="viewRanking(row.experiment_id)"
+          >
+            查看排名
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
 
-    <el-card class="score-statistics" v-if="results.length > 0">
-      <template #header>
-        <div class="card-header">
-          <span>成绩统计</span>
-        </div>
-      </template>
-      <div class="stat-cards">
-        <div class="stat-card">
-          <div class="stat-label">平均分</div>
-          <div class="stat-value">
-            {{ averageScore }}
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">最高分</div>
-          <div class="stat-value high-score">
-            {{ maxScore }}
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">最低分</div>
-          <div class="stat-value" :class="{'low-score': minScore < 70}">
-            {{ minScore }}
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">已评实验</div>
-          <div class="stat-value">
-            {{ results.length }}
-          </div>
-        </div>
-      </div>
-    </el-card>
+    <div class="pagination">
+      <el-pagination
+        background
+        layout="total, prev, pager, next"
+        :total="total"
+        :current-page="currentPage"
+        :page-size="pageSize"
+        @current-change="handlePageChange"
+      />
+    </div>
   </div>
 </template>
 
@@ -146,37 +141,24 @@ onMounted(() => {
 }
 
 .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
 }
 
-.pagination {
-  margin-top: 20px;
+.stats-cards {
   display: flex;
-  justify-content: flex-end;
-}
-
-.score-statistics {
-  margin-top: 30px;
-}
-
-.card-header {
-  font-weight: bold;
-}
-
-.stat-cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
+  margin-bottom: 20px;
 }
 
 .stat-card {
-  background-color: #f8f9fa;
-  padding: 20px;
-  border-radius: 4px;
+  flex: 1;
   text-align: center;
 }
 
-.stat-label {
+.stat-title {
   font-size: 14px;
   color: #606266;
   margin-bottom: 10px;
@@ -185,17 +167,12 @@ onMounted(() => {
 .stat-value {
   font-size: 24px;
   font-weight: bold;
+  color: #409EFF;
 }
 
-.high-score {
-  color: #67C23A;
-}
-
-.medium-score {
-  color: #E6A23C;
-}
-
-.low-score {
-  color: #F56C6C;
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style> 
