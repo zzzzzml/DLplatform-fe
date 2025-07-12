@@ -150,7 +150,6 @@ const fetchRanking = async () => {
 
 // 计算排名
 const rankedStudents = computed(() => {
-  // 复制并排序数组（按分数降序）
   const sorted = [...allStudents.value].sort((a, b) => b.score - a.score)
   
   let currentRank = 1
@@ -279,7 +278,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 样式部分保持不变 */
 .score-rank-container {
   padding: 20px;
 }
@@ -403,7 +401,7 @@ onMounted(() => {
     margin-bottom: 15px;
   }
   
-  .page-header .search-box {
+  .search-box {
     width: 100%;
     margin-top: 15px;
   }

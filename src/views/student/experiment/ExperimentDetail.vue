@@ -39,19 +39,28 @@ const submitExperiment = () => {
 const downloadFile = async (attachment) => {
   try {
     const response = await downloadAttachment(attachment.attachment_id)
-
-    // 创建下载链接
-    const blob = new Blob([response], { type: 'application/octet-stream' })
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = attachment.file_name
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-
-    ElMessage.success('文件下载成功')
+    
+    // 检查响应类型
+    if (response instanceof Blob) {
+      // 如果已经是Blob，直接使用
+      const blob = response
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = attachment.file_name
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      ElMessage.success('文件下载成功')
+    } else if (response.code === 200 && response.data) {
+      // 如果是JSON响应，可能包含文件数据
+      ElMessage.error('下载失败：服务器返回了非文件数据')
+      console.error('下载失败：', response)
+    } else {
+      ElMessage.error(response.message || '文件下载失败')
+    }
   } catch (error) {
     console.error('Download failed:', error)
     ElMessage.error('文件下载失败')

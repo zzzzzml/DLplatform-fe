@@ -19,11 +19,18 @@ export function getExperimentsList() {
 
 // 获取实验详情（新接口）
 export function getExperimentDetail(experimentId) {
+  // 确保experimentId是数字
+  const numericExperimentId = parseInt(experimentId)
+  if (isNaN(numericExperimentId)) {
+    console.error(`getExperimentDetail: 实验ID不是有效的数字: ${experimentId}`)
+    return Promise.reject(new Error(`实验ID不是有效的数字: ${experimentId}`))
+  }
+  
   return request({
     url: '/student/experiment/requirements',
     method: 'get',
     params: {
-      experiment_id: experimentId
+      experiment_id: numericExperimentId
     }
   })
 }
@@ -114,10 +121,28 @@ export function getSubmissionDetail(id) {
 
 // 获取评价列表
 export function getEvaluations(params) {
+  // 如果提供了experiment_id，确保是数字类型
+  if (params && params.experiment_id) {
+    params.experiment_id = parseInt(params.experiment_id)
+    if (isNaN(params.experiment_id)) {
+      console.error(`getEvaluations: experiment_id不是有效的数字: ${params.experiment_id}`)
+      return Promise.reject(new Error(`实验ID不是有效的数字`))
+    }
+  }
+  
+  // 记录请求参数
+  console.log('getEvaluations请求参数:', params)
+  
   return request({
     url: '/evaluations',
     method: 'get',
     params
+  }).then(response => {
+    console.log('getEvaluations响应:', response)
+    return response
+  }).catch(error => {
+    console.error('getEvaluations错误:', error)
+    return Promise.reject(error)
   })
 }
 
@@ -142,11 +167,16 @@ export function getStudentResults(params) {
 // 教师端API
 // 获取教师的实验列表
 export function getTeacherExperiments(params) {
-  return request({
-    url: '/teacher/experiments',
-    method: 'get',
-    params
-  })
+  try {
+    return request({
+      url: '/teacher/experiments',
+      method: 'get',
+      params
+    })
+  } catch (error) {
+    console.error('获取教师实验列表失败:', error)
+    return Promise.reject(error)
+  }
 }
 
 // 获取待评价的实验提交列表
@@ -188,5 +218,44 @@ export function getTeacherExperimentRanking(experimentId) {
     data: {
       experiment_id: experimentId
     }
+  })
+}
+
+// 获取实验结果列表
+export function getResultList(params) {
+  return request({
+    url: '/results',
+    method: 'get',
+    params
+  })
+}
+
+// 一键评测所有提交
+export function evaluateAll(experimentId) {
+  if (!experimentId) {
+    console.error('evaluateAll: 缺少experimentId参数')
+    return Promise.reject(new Error('缺少实验ID参数'))
+  }
+  
+  // 确保experimentId是数字类型
+  const numericExperimentId = parseInt(experimentId)
+  if (isNaN(numericExperimentId)) {
+    console.error(`evaluateAll: experimentId不是有效的数字: ${experimentId}`)
+    return Promise.reject(new Error(`实验ID不是有效的数字`))
+  }
+  
+  console.log(`开始一键评测，实验ID: ${numericExperimentId}`)
+  
+  return request({
+    url: '/test',
+    method: 'get',
+    params: { experimentId: numericExperimentId },
+    timeout: 60000 // 增加超时时间到60秒，因为评测可能需要较长时间
+  }).then(response => {
+    console.log('一键评测响应:', response)
+    return response
+  }).catch(error => {
+    console.error('一键评测错误:', error)
+    return Promise.reject(error)
   })
 }

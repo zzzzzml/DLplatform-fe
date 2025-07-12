@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'  //这里调用vue的路由 useRouter 里面的这个玩意
 import { useUserStore } from '../../stores/user'
 import { useExperimentStore } from '../../stores/experiment'
 import {
@@ -16,7 +16,7 @@ import {
   Plus
 } from '@element-plus/icons-vue'
 
-const router = useRouter()
+const router = useRouter()  //初始化
 const userStore = useUserStore()
 const experimentStore = useExperimentStore()
 
@@ -92,6 +92,7 @@ const fetchStats = async () => {
   }
 }
 
+// 把他定义成一个方法 当点击或者干什么的时候调用这个方法就会跳转到对应的页面，（至于是什么页面看他定义的路径是那个vue文件）
 const goToExperimentList = () => {
   router.push('/student/experiment-list')
 }

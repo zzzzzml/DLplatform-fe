@@ -41,8 +41,8 @@ export const updateUserProfile = updateUserInfo
 // 更新用户密码
 export function updateUserPassword(data) {
   return request({
-    url: '/auth/change-password',
-    method: 'post',
+    url: '/auth/password',
+    method: 'put',
     data
   })
 }

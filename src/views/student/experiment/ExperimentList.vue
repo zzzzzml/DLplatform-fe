@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getExperimentsList } from '../../../api/experiment'
 import { ElMessage } from 'element-plus'
@@ -42,7 +42,7 @@ const viewExperiment = (id) => {
 
 // 上传实验
 const uploadExperiment = (id) => {
-  router.push(`/student/experiment-submit/${id}`)
+  router.push(`/student/experiment-upload/${id}`)
 }
 
 // 处理搜索
@@ -141,7 +141,7 @@ onMounted(() => {
             @click="viewExperiment(row.experiment_id)"
           >
             查看
-          </el-button>
+          </el-button>  
         </template>
       </el-table-column>
     </el-table>

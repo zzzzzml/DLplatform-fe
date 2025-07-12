@@ -54,6 +54,11 @@ const routes = [
         path: 'score/:id',
         name: 'Scoreranking',
         component: () => import('../views/student/experiment/Experimentscore.vue')  //把要跳转的vue页面路径写到这里
+      },
+      {
+        path: 'experiment-upload/:id',
+        name: 'ExperimentUpload',
+        component: () => import('../views/student/experiment/ExperimentUpload.vue')
       }
     ]
   },
@@ -111,6 +116,12 @@ const routes = [
       },
       {
         path: 'tscore/:id',
+        name: 'Tscoreranking',
+        component: () => import('../views/teacher/experiment/Experimentscore.vue')
+      }
+      ,
+      {
+        path: 'tscore',
         name: 'Tscoreranking',
         component: () => import('../views/teacher/experiment/Experimentscore.vue')
       }
