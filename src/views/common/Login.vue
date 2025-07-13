@@ -95,8 +95,8 @@ const goToRegister = () => {
             <div class="logo-icon">
               <el-icon size="48"><Reading /></el-icon>
             </div>
-            <h1 class="brand-title">DL Platform</h1>
-            <p class="brand-subtitle">深度学习教学实验平台</p>
+            <h1 class="brand-title">神经网络与深度学习实验教学平台</h1>
+            <p class="brand-subtitle">Neural Network and Deep Learning Teaching Platform</p>
           </div>
 
           <div class="features">

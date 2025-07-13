@@ -99,7 +99,7 @@ onMounted(() => {
           <div class="logo-icon teacher">
             <el-icon size="24"><Management /></el-icon>
           </div>
-          <span class="logo-text">DL Platform</span>
+          <span class="logo-text">神经网络与深度学习实验教学平台</span>
           <span class="user-badge teacher">教师端</span>
         </div>
       </div>

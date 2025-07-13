@@ -21,7 +21,7 @@ const handleLogout = async () => {
 <template>
   <div class="header">
     <div class="logo">
-      <h1>深度学习教学实验平台</h1>
+      <h1>神经网络与深度学习实验教学平台</h1>
     </div>
     <div class="user-info">
       <el-dropdown>
