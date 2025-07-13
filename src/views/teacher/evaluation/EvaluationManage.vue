@@ -132,7 +132,7 @@
         <el-alert
           type="warning"
           title="查重说明"
-          description="查重结果显示了每个学生提交的pth文件与其他学生提交的pth文件之间的最高相似度。相似度越高，可能抄袭的可能性越大。"
+          description="查重结果仅基于文件大小比较，显示了每个学生提交的pth文件与其他学生提交的pth文件之间的最高相似度。当两个文件大小完全相同时，会被判定为完全重复(100%)。相似度 = 100 - 文件大小差异百分比。"
           show-icon
           :closable="false"
           style="margin-bottom: 20px;"
@@ -149,9 +149,9 @@
           <el-table-column prop="highest_similarity" label="最高相似度" min-width="120" sortable>
             <template #default="{ row }">
               <el-progress
-                :percentage="row.highest_similarity"
+                :percentage="Math.min(row.highest_similarity, 100)"
                 :color="getSimilarityColor(row.highest_similarity)"
-                :format="() => `${row.highest_similarity}%`"
+                :format="() => `${Number(row.highest_similarity).toFixed(1)}%`"
                 :stroke-width="18"
               />
             </template>
@@ -641,25 +641,28 @@ const handleCurrentChange = (page) => {
 
 // 获取相似度颜色
 const getSimilarityColor = (similarity) => {
-  if (similarity >= 80) return '#F56C6C' // 红色
-  if (similarity >= 70) return '#E6A23C' // 橙色
-  if (similarity >= 60) return '#F0C78A' // 浅橙色
+  if (similarity === 100) return '#FF0000' // 纯红色（完全重复）
+  if (similarity >= 99) return '#F56C6C' // 红色
+  if (similarity >= 95) return '#E6A23C' // 橙色
+  if (similarity >= 90) return '#F0C78A' // 浅橙色
   return '#67C23A' // 绿色
 }
 
 // 获取相似度标签类型
 const getSimilarityTagType = (similarity) => {
-  if (similarity >= 80) return 'danger'
-  if (similarity >= 70) return 'warning'
-  if (similarity >= 60) return 'info'
+  if (similarity === 100) return 'danger'
+  if (similarity >= 99) return 'danger'
+  if (similarity >= 95) return 'warning'
+  if (similarity >= 90) return 'info'
   return 'success'
 }
 
 // 获取相似度级别文本
 const getSimilarityLevel = (similarity) => {
-  if (similarity >= 80) return '极高风险'
-  if (similarity >= 70) return '高风险'
-  if (similarity >= 60) return '中等风险'
+  if (similarity === 100) return '完全重复'
+  if (similarity >= 99) return '极高风险'
+  if (similarity >= 95) return '高风险'
+  if (similarity >= 90) return '中等风险'
   return '低风险'
 }
 
@@ -679,7 +682,7 @@ const exportPlagiarismResults = () => {
       const row = [
         result.student_name,
         result.student_id,
-        `${result.highest_similarity}%`,
+        `${Number(result.highest_similarity).toFixed(1)}%`,
         result.similar_with_name || '无',
         getSimilarityLevel(result.highest_similarity)
       ]
