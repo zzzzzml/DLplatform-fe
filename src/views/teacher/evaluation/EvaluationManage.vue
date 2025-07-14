@@ -23,9 +23,7 @@
             </el-select>
             <el-select v-model="filter.status" placeholder="提交状态" clearable @change="fetchEvaluations">
               <el-option label="已提交" :value="1"></el-option>
-              <el-option label="未提交" :value="0"></el-option>
               <el-option label="已评测" :value="3"></el-option>
-              <el-option label="已评价" :value="2"></el-option>
             </el-select>
             <el-button type="primary" @click="fetchEvaluations">查询</el-button>
           </div>
@@ -37,6 +35,12 @@
         </el-button>
         <el-button type="primary" @click="handleCheckPlagiarism" style="margin-bottom: 10px;">
           一键查重
+        </el-button>
+        <el-button type="success" @click="handleBatchDownload" style="margin-bottom: 10px;">
+          一键下载
+        </el-button>
+        <el-button type="warning" @click="exportGrades" style="margin-bottom: 10px;">
+          导出成绩
         </el-button>
         <el-table
           v-loading="loading"
@@ -76,36 +80,7 @@
               {{ scope.row.score !== null && scope.row.score !== undefined ? scope.row.score : '未评分' }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" min-width="260" fixed="right">
-            <template #default="scope">
-              <el-button
-                v-if="scope.row.status >= 1"
-                type="primary"
-                size="small"
-                @click="handleViewDetail(scope.row)"
-              >
-                评价
-              </el-button>
-              <el-button
-                v-if="scope.row.status >= 1 && scope.row.status !== 3"
-                type="info"
-                size="small"
-                :loading="scope.row._evaluating"
-                :disabled="scope.row._evaluating"
-                @click="handleAutoEvaluate(scope.row)"
-              >
-                评测
-              </el-button>
-              <el-button
-                v-if="scope.row.file_path && scope.row.file_name"
-                type="success"
-                size="small"
-                @click="downloadFile(scope.row)"
-              >
-                下载
-              </el-button>
-            </template>
-          </el-table-column>
+          <!-- 删除整个操作列 -->
         </el-table>
         <div class="pagination-container">
           <el-pagination
@@ -596,6 +571,86 @@ const handleCheckPlagiarism = async () => {
   }
 }
 
+// 一键下载按钮处理函数
+const handleBatchDownload = async () => {
+  if (!filter.experimentId) {
+    ElMessage.warning('请先选择一个实验进行下载')
+    return
+  }
+  
+  try {
+    // 显示加载状态
+    const loadingInstance = ElLoading.service({
+      lock: true,
+      text: '正在准备下载...',
+      background: 'rgba(0, 0, 0, 0.7)'
+    })
+    
+    // 构建下载URL
+    const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+    const downloadUrl = `${baseURL}/download/submissions/batch?experiment_id=${filter.experimentId}`
+    
+    console.log('批量下载URL:', downloadUrl)
+    
+    // 使用fetch API获取文件
+    const response = await fetch(downloadUrl)
+    
+    if (!response.ok) {
+      // 尝试解析错误响应
+      let errorMessage = '下载失败'
+      try {
+        const errorData = await response.json()
+        errorMessage = errorData.message || `下载失败 (${response.status})`
+      } catch (e) {
+        errorMessage = `下载失败: HTTP ${response.status}`
+      }
+      
+      ElMessage.error(errorMessage)
+      loadingInstance.close()
+      return
+    }
+    
+    // 获取文件名
+    const contentDisposition = response.headers.get('Content-Disposition')
+    let filename = `experiment_${filter.experimentId}_submission.zip`
+    
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/)
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1]
+      }
+    }
+    
+    // 将响应转换为Blob
+    const blob = await response.blob()
+    
+    // 创建下载链接
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.style.display = 'none'
+    
+    // 添加到文档并触发点击
+    document.body.appendChild(link)
+    link.click()
+    
+    // 清理
+    setTimeout(() => {
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    }, 100)
+    
+    // 关闭加载状态
+    loadingInstance.close()
+    ElMessage.success('文件下载已开始')
+    
+  } catch (error) {
+    ElMessage.error('下载失败: ' + (error.message || '未知错误'))
+    console.error('下载文件失败:', error)
+  }
+}
+
 const formatDate = (date) => {
   if (!date) return ''
   const d = new Date(date)
@@ -702,6 +757,51 @@ const exportPlagiarismResults = () => {
   } catch (error) {
     console.error('导出查重结果失败:', error)
     ElMessage.error('导出查重结果失败: ' + (error.message || '未知错误'))
+  }
+}
+
+// 导出成绩CSV
+const exportGrades = () => {
+  if (!filter.experimentId) {
+    ElMessage.warning('请先选择一个实验进行成绩导出')
+    return
+  }
+  
+  if (evaluationList.value.length === 0) {
+    ElMessage.warning('当前没有可导出的成绩数据')
+    return
+  }
+  
+  try {
+    // 创建CSV内容
+    let csvContent = 'data:text/csv;charset=utf-8,'
+    csvContent += '学生ID,学生姓名,班级,提交时间,状态,得分\n'
+
+    evaluationList.value.forEach(item => {
+      const row = [
+        item.student_id || '',
+        item.student_name || '',
+        item.class_name || '',
+        item.submit_time ? formatDate(item.submit_time) : '未提交',
+        getStatusText(item.status),
+        item.score !== null && item.score !== undefined ? item.score : '未评分'
+      ]
+      csvContent += row.join(',') + '\n'
+    })
+
+    // 创建下载链接
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', `成绩_实验${filter.experimentId}_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    ElMessage.success('成绩已导出')
+  } catch (error) {
+    console.error('导出成绩失败:', error)
+    ElMessage.error('导出成绩失败: ' + (error.message || '未知错误'))
   }
 }
 </script>

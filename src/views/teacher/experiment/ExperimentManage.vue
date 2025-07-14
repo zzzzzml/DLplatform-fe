@@ -308,13 +308,6 @@ onMounted(() => {
               编辑
             </el-button>
             <el-button
-              type="info"
-              size="small"
-              @click="viewSubmissions(row.experiment_id)"
-            >
-              查看排名
-            </el-button>
-            <el-button
               type="warning"
               size="small"
               @click="handleUploadTestData(row.experiment_id, row.experiment_name)"
@@ -322,6 +315,14 @@ onMounted(() => {
             >
               上传测试
             </el-button>
+            <el-button
+              type="info"
+              size="small"
+              @click="viewSubmissions(row.experiment_id)"
+            >
+              查看排名
+            </el-button>
+
             <el-button
               type="danger"
               size="small"

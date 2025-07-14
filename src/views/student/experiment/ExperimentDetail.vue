@@ -32,7 +32,7 @@ const fetchExperimentDetail = async () => {
 
 // 提交实验
 const submitExperiment = () => {
-  router.push(`/student/experiment-submit/${experimentId}`)
+  router.push(`/student/experiment-upload/${experimentId}`)
 }
 
 // 查看排名

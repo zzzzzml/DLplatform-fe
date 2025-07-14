@@ -69,11 +69,6 @@
             <div class="el-upload__text">
               将文件拖到此处，或<em>点击上传</em>
             </div>
-            <template #tip>
-              <div class="el-upload__tip">
-                支持上传单个文件，文件大小不超过10MB
-              </div>
-            </template>
           </el-upload>
         </el-form-item>
         <el-form-item>

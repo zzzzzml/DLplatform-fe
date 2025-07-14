@@ -1,15 +1,16 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getTeacherExperimentDetail } from '../../../api/experiment'
+import { getTeacherExperimentDetail, downloadAttachment } from '../../../api/experiment'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { ArrowLeft, Download, Document, ArrowDown } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
 const experimentId = route.params.id
 
 const experiment = ref(null)
+const attachments = ref([])
 const loading = ref(false)
 
 // 获取实验详情
@@ -19,7 +20,9 @@ const fetchExperimentDetail = async () => {
     const response = await getTeacherExperimentDetail(experimentId)
     if (response.code === 200) {
       experiment.value = response.data.experiment
+      attachments.value = response.data.attachments || []
       console.log('获取到实验详情:', experiment.value)
+      console.log('获取到附件:', attachments.value)
     } else {
       ElMessage.error(response.message || '获取实验详情失败')
     }
@@ -29,6 +32,47 @@ const fetchExperimentDetail = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// 下载附件
+const downloadFile = async (attachment) => {
+  try {
+    const response = await downloadAttachment(attachment.attachment_id)
+    
+    // 检查响应类型
+    if (response instanceof Blob) {
+      // 如果已经是Blob，直接使用
+      const blob = response
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = attachment.file_name
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      ElMessage.success('文件下载成功')
+    } else if (response.code === 200 && response.data) {
+      // 如果是JSON响应，可能包含文件数据
+      ElMessage.error('下载失败：服务器返回了非文件数据')
+      console.error('下载失败：', response)
+    } else {
+      ElMessage.error(response.message || '文件下载失败')
+    }
+  } catch (error) {
+    console.error('Download failed:', error)
+    ElMessage.error('文件下载失败')
+  }
+}
+
+// 格式化文件大小
+const formatFileSize = (bytes) => {
+  if (!bytes || bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
 // 返回列表
@@ -115,6 +159,29 @@ onMounted(() => {
           <h2>{{ experiment.experiment_name }}</h2>
         </div>
         <div class="actions">
+          <el-dropdown v-if="attachments.length > 0" trigger="click" class="dropdown-button">
+            <el-button type="success" :icon="Download">
+              下载附件
+              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item
+                  v-for="attachment in attachments"
+                  :key="attachment.attachment_id"
+                  @click="downloadFile(attachment)"
+                >
+                  <div class="attachment-item-dropdown">
+                    <el-icon><Document /></el-icon>
+                    <div class="attachment-info">
+                      <div class="file-name">{{ attachment.file_name }}</div>
+                      <div class="file-meta">{{ formatFileSize(attachment.file_size) }}</div>
+                    </div>
+                  </div>
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
           <el-button type="warning" @click="viewRanking">
             查看排名
           </el-button>
@@ -169,6 +236,24 @@ onMounted(() => {
         </template>
         <div class="experiment-content">{{ experiment.description }}</div>
       </el-card>
+
+      <el-card class="content-card" v-if="attachments.length > 0">
+        <template #header>
+          <div class="card-header">
+            <span>实验附件</span>
+          </div>
+        </template>
+        <div class="attachment-list">
+          <div v-for="attachment in attachments" :key="attachment.attachment_id" class="attachment-item">
+            <el-icon><Document /></el-icon>
+            <div class="attachment-info">
+              <div class="file-name">{{ attachment.file_name }}</div>
+              <div class="file-meta">{{ formatFileSize(attachment.file_size) }} | {{ formatDateTime(attachment.upload_time) }}</div>
+            </div>
+            <el-button type="primary" size="small" @click="downloadFile(attachment)">下载</el-button>
+          </div>
+        </div>
+      </el-card>
     </div>
 
     <el-empty v-else description="未找到实验信息" />
@@ -178,8 +263,6 @@ onMounted(() => {
 <style scoped>
 .experiment-detail {
   padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
 }
 
 .detail-container {
@@ -192,11 +275,10 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #f5f7fa;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .header-left {
@@ -207,30 +289,32 @@ onMounted(() => {
 
 .page-header h2 {
   margin: 0;
-  color: white;
-  font-size: 24px;
+  color: #303133;
+  font-size: 22px;
   font-weight: 600;
 }
 
 .actions {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dropdown-button {
+  margin-right: 10px;
 }
 
 .info-card,
 .content-card {
   margin-bottom: 20px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
   font-weight: 600;
   font-size: 16px;
-  color: #2c3e50;
+  color: #303133;
 }
 
 .experiment-info {
@@ -248,21 +332,64 @@ onMounted(() => {
 
 .label {
   font-weight: 600;
-  color: #555;
-  min-width: 120px;
+  color: #606266;
+  min-width: 100px;
 }
 
 .value {
-  color: #333;
+  color: #303133;
   font-weight: 500;
 }
 
 .experiment-content {
   line-height: 1.8;
-  color: #444;
+  color: #303133;
   font-size: 15px;
   white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 4px;
+  background-color: #f5f7fa;
+}
+
+.attachment-item-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.attachment-item .el-icon,
+.attachment-item-dropdown .el-icon {
+  font-size: 20px;
+  color: #409EFF;
+  margin-right: 10px;
+}
+
+.attachment-info {
+  flex: 1;
+  margin-right: 10px;
+}
+
+.file-name {
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 5px;
+}
+
+.file-meta {
+  font-size: 12px;
+  color: #909399;
 }
 
 /* 响应式设计 */
@@ -270,15 +397,12 @@ onMounted(() => {
   .page-header {
     flex-direction: column;
     gap: 15px;
-    align-items: stretch;
-  }
-
-  .header-left {
-    justify-content: center;
+    align-items: flex-start;
   }
 
   .actions {
-    justify-content: center;
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .experiment-info {

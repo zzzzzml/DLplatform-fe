@@ -19,33 +19,7 @@ export const useUserStore = defineStore('user', {
   actions: {
     async login(credentials) {
       try {
-        // 处理测试账号登录
-        if (credentials.username === 'test_student' || credentials.username === 'test_teacher') {
-          // 使用前端选择的角色创建模拟用户信息
-          const mockUserInfo = {
-            user_id: credentials.role === 'student' ? 1 : 2,
-            user_type: credentials.role,
-            realname: credentials.role === 'student' ? 'jack' : '王老师',
-            email: credentials.role === 'student' ? '123@163.com' : 'wang@example.com',
-            username: credentials.username,
-            profile_completed: true // 测试账号默认已完成资料
-          }
-
-          // 保存用户信息
-          this.userInfo = mockUserInfo
-          this.role = credentials.role
-          this.token = 'mock_token_' + Date.now()
-
-          // 保存到localStorage
-          localStorage.setItem('token', this.token)
-          localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
-          localStorage.setItem('role', this.role)
-
-          ElMessage.success('测试登录成功')
-          return { token: this.token }
-        }
-
-        // 调用真实的API，只传递username和password
+        // 调用API，只传递username和password
         const loginData = {
           username: credentials.username,
           password: credentials.password
@@ -86,11 +60,6 @@ export const useUserStore = defineStore('user', {
     },
 
     async fetchUserInfo() {
-      // 如果是测试账号或API登录，直接返回已存储的用户信息
-      if (this.token && this.token.startsWith('mock_token_')) {
-        return this.userInfo
-      }
-
       // 如果没有用户信息，尝试从API获取（兼容旧版本）
       try {
         const response = await getUserInfo()
@@ -121,13 +90,6 @@ export const useUserStore = defineStore('user', {
     },
 
     async logout() {
-      // 如果是测试账号，直接清除状态
-      if (this.token && this.token.startsWith('mock_token_')) {
-        this.resetState()
-        ElMessage.success('已退出登录')
-        return
-      }
-      
       try {
         await logout()
       } catch (error) {

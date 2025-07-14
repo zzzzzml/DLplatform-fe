@@ -59,11 +59,6 @@
           <div class="el-upload__text">
             将文件拖到此处，或<em>点击上传</em>
           </div>
-          <template #tip>
-            <div class="el-upload__tip">
-              只能上传 .zip/.rar/.7z 文件，且不超过 10MB
-            </div>
-          </template>
         </el-upload>
 
         <!-- 上传进度 -->
@@ -157,7 +152,6 @@
         <div class="notes-content">
           <ul>
             <li>请确保上传的是实验代码压缩包（.zip/.rar/.7z格式）</li>
-            <li>文件大小不能超过10MB</li>
             <li>压缩包内请包含所有实验相关代码和文件</li>
             <li>提交后将无法修改，请仔细检查后再提交</li>
             <li>系统将自动检测文件格式</li>

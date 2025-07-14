@@ -12,13 +12,13 @@ const userStore = useUserStore()
 const loginForm = reactive({
   username: '',
   password: '',
-  role: 'student'
+  role: 'student' // Default to student role
 })
 
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-  role: [{ required: true, message: '请选择角色', trigger: 'change' }]
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  // Removed role validation as it's no longer selectable
 }
 
 const formRef = ref(null)
@@ -59,13 +59,6 @@ const handleLogin = async () => {
       }
     }
   })
-}
-
-const fillTestAccount = () => {
-  loginForm.username = '123'
-  loginForm.password = '123'
-  loginForm.role = 'student'
-  ElMessage.info('已填充测试账号')
 }
 
 const goToRegister = () => {
@@ -153,16 +146,6 @@ const goToRegister = () => {
               />
             </el-form-item>
 
-            <el-form-item prop="role">
-              <div class="role-selector">
-                <div class="role-title">选择身份</div>
-                <el-radio-group v-model="loginForm.role" class="role-group">
-                  <el-radio-button label="student">学生</el-radio-button>
-                  <el-radio-button label="teacher">教师</el-radio-button>
-                </el-radio-group>
-              </div>
-            </el-form-item>
-
             <el-button
               type="primary"
               :loading="loading"
@@ -179,11 +162,6 @@ const goToRegister = () => {
               <el-button type="text" @click="goToRegister" class="register-link">
                 立即注册
               </el-button>
-            </div>
-
-            <div class="test-account-tip" @click="fillTestAccount">
-              <el-icon><User /></el-icon>
-              <span>点击使用测试账号 (123/123)</span>
             </div>
           </el-form>
         </div>
@@ -420,46 +398,6 @@ const goToRegister = () => {
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.role-selector {
-  margin: 1.5rem 0;
-}
-
-.role-title {
-  font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 0.75rem;
-  font-weight: 500;
-}
-
-.role-group {
-  width: 100%;
-}
-
-.role-group :deep(.el-radio-button) {
-  flex: 1;
-}
-
-.role-group :deep(.el-radio-button__inner) {
-  width: 100%;
-  border-radius: 8px;
-  border: 1px solid #e1e5e9;
-  background: #fff;
-  color: #666;
-  transition: all 0.3s ease;
-}
-
-.role-group :deep(.el-radio-button__inner:hover) {
-  border-color: #667eea;
-  color: #667eea;
-}
-
-.role-group :deep(.el-radio-button.is-active .el-radio-button__inner) {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-color: #667eea;
-  color: white;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
 .login-button {
   width: 100%;
   height: 48px;
@@ -500,27 +438,6 @@ const goToRegister = () => {
 
 .register-link:hover {
   color: #764ba2;
-}
-
-.test-account-tip {
-  margin-top: 1.5rem;
-  text-align: center;
-  padding: 0.75rem;
-  background: rgba(102, 126, 234, 0.1);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  color: #667eea;
-  font-size: 0.85rem;
-}
-
-.test-account-tip:hover {
-  background: rgba(102, 126, 234, 0.15);
-  transform: translateY(-1px);
 }
 
 /* 响应式设计 */

@@ -14,20 +14,20 @@ const total = ref(0)
 // 计算平均分
 const averageScore = computed(() => {
   if (results.value.length === 0) return 0
-  const sum = results.value.reduce((acc, item) => acc + item.score, 0)
+  const sum = results.value.reduce((acc, item) => acc + Number(item.score), 0)
   return (sum / results.value.length).toFixed(1)
 })
 
 // 计算最高分
 const maxScore = computed(() => {
   if (results.value.length === 0) return 0
-  return Math.max(...results.value.map(item => item.score))
+  return Math.max(...results.value.map(item => Number(item.score)))
 })
 
 // 计算最低分
 const minScore = computed(() => {
   if (results.value.length === 0) return 0
-  return Math.min(...results.value.map(item => item.score))
+  return Math.min(...results.value.map(item => Number(item.score)))
 })
 
 // 获取实验结果列表
@@ -38,11 +38,22 @@ const fetchResults = async () => {
       page: currentPage.value,
       pageSize: pageSize.value
     })
-    results.value = res.data
-    total.value = res.total
+    
+    if (res && res.code === 200) {
+      results.value = res.data || []
+      total.value = res.total || 0
+      console.log('获取实验结果成功:', results.value)
+    } else {
+      console.error('获取实验结果失败:', res)
+      ElMessage.error(res?.message || '获取实验结果失败')
+      results.value = []
+      total.value = 0
+    }
   } catch (error) {
-    console.error('Failed to fetch results:', error)
+    console.error('获取实验结果失败:', error)
     ElMessage.error('获取实验结果失败')
+    results.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }
@@ -56,7 +67,7 @@ const handlePageChange = (page) => {
 
 // 查看评价详情
 const viewFeedback = (result) => {
-  ElMessageBox.alert(result.feedback, '教师评价', {
+  ElMessageBox.alert(result.feedback || '暂无评价', '教师评价', {
     confirmButtonText: '确定'
   })
 }
@@ -122,7 +133,7 @@ onMounted(() => {
       </el-table-column>
     </el-table>
 
-    <div class="pagination">
+    <div class="pagination" v-if="total > 0">
       <el-pagination
         background
         layout="total, prev, pager, next"
@@ -132,6 +143,9 @@ onMounted(() => {
         @current-change="handlePageChange"
       />
     </div>
+    
+    <!-- 无数据提示 -->
+    <el-empty v-if="!loading && results.length === 0" description="暂无实验结果数据" />
   </div>
 </template>
 
